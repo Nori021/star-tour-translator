@@ -1,4 +1,4 @@
-const CACHE = 'star-tour-translator-v1';
+const CACHE = 'star-tour-translator-v3';
 const ASSETS = [
   './',
   './index.html',
@@ -26,13 +26,32 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  const url = new URL(e.request.url);
+  // For audio files: cache aggressively (immutable hash-named files)
+  if (url.pathname.includes('/audio/')) {
+    e.respondWith(
+      caches.match(e.request).then(cached =>
+        cached || fetch(e.request).then(res => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+          }
+          return res;
+        })
+      )
+    );
+    return;
+  }
+  // For other files: cache-first with network fallback
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      return cached || fetch(e.request).then(res => {
-        const copy = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+    caches.match(e.request).then(cached =>
+      cached || fetch(e.request).then(res => {
+        if (res.ok) {
+          const copy = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        }
         return res;
-      }).catch(() => cached);
-    })
+      }).catch(() => cached)
+    )
   );
 });

@@ -12,7 +12,6 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>星空ツアー翻訳 / 별 투어 번역</title>
 <style>
-/* Night theme (red — preserves dark adaptation, default) */
 :root {
   --bg: #000;
   --surface: #1a0606;
@@ -21,11 +20,11 @@
   --text-dim: #a83020;
   --text-faint: #6a1818;
   --accent: #ff8866;
+  --accent-bg: #5a1818;
   --button-bg: #1a0606;
-  --button-active: #5a1818;
+  --selected-bg: #5a1818;
+  --selected-border: #ff8866;
 }
-
-/* Day theme (blue) */
 body.normal-theme {
   --bg: #0a1420;
   --surface: #142436;
@@ -34,8 +33,10 @@ body.normal-theme {
   --text-dim: #8aa8d0;
   --text-faint: #4a6080;
   --accent: #5aa0ff;
+  --accent-bg: #2a5090;
   --button-bg: #142436;
-  --button-active: #2a5090;
+  --selected-bg: #2a5090;
+  --selected-border: #5aa0ff;
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -56,92 +57,153 @@ header {
   border-bottom: 1px solid var(--border);
   padding: env(safe-area-inset-top, 0) 12px 0 12px;
 }
-.title-row {
-  display: flex; justify-content: space-between; align-items: center;
+
+.row1 {
+  display: flex; align-items: center; gap: 8px;
   padding: 10px 0 6px 0;
 }
 h1 {
-  font-size: 15px; margin: 0;
+  font-size: 14px; margin: 0;
   color: var(--text-dim); font-weight: 500;
-  letter-spacing: 0.02em;
+  flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.theme-toggle {
+.icon-btn {
   background: var(--button-bg); color: var(--text-dim);
   border: 1px solid var(--border);
-  padding: 6px 12px; border-radius: 16px;
+  padding: 7px 11px; border-radius: 14px;
+  font-size: 13px; cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.icon-btn.active {
+  background: var(--accent-bg);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.speed-row {
+  display: flex; gap: 6px; align-items: center;
+  padding-bottom: 8px;
+  font-size: 12px; color: var(--text-faint);
+}
+.speed-row .label { margin-right: 4px; }
+.speed-btn {
+  background: var(--button-bg); color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 5px 10px; border-radius: 12px;
   font-size: 12px; cursor: pointer;
   font-family: inherit;
+}
+.speed-btn.active {
+  background: var(--accent-bg);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
 }
 
 nav {
   display: flex; gap: 8px; overflow-x: auto;
-  padding: 6px 0 10px 0;
+  padding: 4px 0 10px 0;
   scrollbar-width: none;
-  scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x proximity;
 }
 nav::-webkit-scrollbar { display: none; }
 .tab {
   flex-shrink: 0;
   background: var(--button-bg); color: var(--text-dim);
   border: 1px solid var(--border);
-  padding: 9px 16px; border-radius: 20px;
-  font-size: 14px; cursor: pointer; white-space: nowrap;
+  padding: 8px 14px; border-radius: 18px;
+  font-size: 13px; cursor: pointer; white-space: nowrap;
   font-family: inherit;
-  scroll-snap-align: start;
   transition: background 0.1s, color 0.1s;
 }
 .tab.active {
-  background: var(--button-active);
+  background: var(--accent-bg);
   color: #fff;
   border-color: var(--accent);
   font-weight: 600;
 }
 
 main {
-  padding: 12px 12px calc(env(safe-area-inset-bottom, 0) + 32px) 12px;
+  padding: 12px 12px calc(env(safe-area-inset-bottom, 0) + 100px) 12px;
   display: flex; flex-direction: column; gap: 10px;
 }
 
 .phrase-btn {
   background: var(--button-bg);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: 14px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   text-align: left;
   cursor: pointer;
   width: 100%;
   font-family: inherit;
-  display: flex; flex-direction: column; gap: 4px;
-  transition: background 0.08s;
+  display: flex; flex-direction: column; gap: 8px;
+  transition: background 0.08s, border-color 0.08s;
 }
-.phrase-btn:active { background: var(--button-active); }
+.phrase-btn:active { background: var(--selected-bg); }
+.phrase-btn.selected {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+}
 .phrase-btn .ja {
-  font-size: 17px; line-height: 1.4;
+  font-size: 16px; line-height: 1.4;
   color: var(--text);
 }
-.phrase-btn .ko {
-  font-size: 13px; line-height: 1.3;
-  color: var(--text-faint);
+.phrase-btn .ko-ruby {
+  font-size: 17px; line-height: 2.4;
+  color: var(--text-dim);
+  word-break: keep-all;
 }
-.phrase-btn.has-number {
+.phrase-btn .ko-ruby ruby rt {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-weight: 400;
+  opacity: 0.75;
+}
+.phrase-btn.selected .ko-ruby,
+.phrase-btn.selected .ja {
+  color: #fff;
+}
+.phrase-btn.selected .ko-ruby ruby rt {
+  color: #fff;
+  opacity: 0.9;
+}
+.phrase-btn.has-pose {
   display: grid;
-  grid-template-columns: 48px 1fr;
+  grid-template-columns: 44px 1fr;
   align-items: center;
   gap: 14px;
-  padding: 12px 16px;
+  padding: 10px 14px;
 }
 .phrase-btn .pose-num {
   grid-row: span 2;
-  font-size: 32px; font-weight: 700;
+  font-size: 30px; font-weight: 700;
   color: var(--accent);
   text-align: center;
   line-height: 1;
 }
-.phrase-btn.has-number .ja,
-.phrase-btn.has-number .ko { grid-column: 2; }
+.phrase-btn.has-pose .ja,
+.phrase-btn.has-pose .ko-ruby { grid-column: 2; }
+
+.select-marker {
+  display: none;
+  position: absolute;
+  top: 8px; right: 8px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px; font-weight: 700;
+  align-items: center; justify-content: center;
+  line-height: 1;
+}
+.phrase-btn { position: relative; }
+body.select-mode .phrase-btn.selected .select-marker {
+  display: flex;
+}
 
 /* Modal */
 #modal {
@@ -158,7 +220,7 @@ main {
   padding: 12px 0;
   border-bottom: 1px solid var(--border);
 }
-.modal-close {
+.modal-close, .modal-speak {
   background: var(--button-bg); color: var(--text);
   border: 1px solid var(--border);
   padding: 9px 16px; border-radius: 10px;
@@ -166,11 +228,8 @@ main {
   font-family: inherit;
 }
 .modal-speak {
-  background: var(--button-active); color: #fff;
-  border: 1px solid var(--accent);
-  padding: 9px 16px; border-radius: 10px;
-  font-size: 15px; cursor: pointer;
-  font-family: inherit;
+  background: var(--accent-bg); color: #fff;
+  border-color: var(--accent);
   font-weight: 600;
 }
 .modal-body {
@@ -178,48 +237,109 @@ main {
   display: flex; flex-direction: column;
   justify-content: center; align-items: center;
   padding: 20px 4px;
-  gap: 28px;
+  gap: 24px;
   cursor: pointer;
+  overflow-y: auto;
 }
 .modal-pose-num {
-  font-size: 120px; font-weight: 800;
+  font-size: 110px; font-weight: 800;
   color: var(--accent);
   line-height: 1;
-  margin-bottom: -8px;
 }
 .ja-text {
-  font-size: 17px; color: var(--text-dim);
+  font-size: 16px; color: var(--text-dim);
   text-align: center; line-height: 1.5;
 }
 .ko-text {
-  font-size: 38px; color: var(--text);
+  font-size: 30px; color: var(--text);
   font-weight: 600;
-  text-align: center; line-height: 1.4;
+  text-align: center; line-height: 2.6;
   word-break: keep-all;
 }
+.ko-text ruby rt {
+  font-size: 14px;
+  color: var(--text-dim);
+  font-weight: 500;
+}
 .modal-hint {
-  font-size: 12px; color: var(--text-faint);
-  text-align: center;
-  padding-bottom: 8px;
+  font-size: 11px; color: var(--text-faint);
 }
 
 @media (min-height: 700px) {
-  .ko-text { font-size: 46px; }
-  .modal-pose-num { font-size: 160px; }
+  .ko-text { font-size: 36px; line-height: 2.8; }
+  .ko-text ruby rt { font-size: 16px; }
+  .modal-pose-num { font-size: 140px; }
+}
+
+/* Selection action bar */
+#action-bar {
+  position: fixed;
+  left: 12px; right: 12px;
+  bottom: calc(env(safe-area-inset-bottom, 0) + 12px);
+  background: var(--accent-bg);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  padding: 10px 12px;
+  display: none;
+  align-items: center; gap: 8px;
+  z-index: 50;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+}
+#action-bar.visible { display: flex; }
+.action-count {
+  flex: 1;
+  font-size: 14px; color: #fff; font-weight: 600;
+}
+.action-btn {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 9px 14px; border-radius: 10px;
+  font-size: 14px; cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+}
+.action-btn.primary {
+  background: #fff;
+  color: var(--accent-bg);
+  border-color: #fff;
+}
+.action-btn.primary:disabled {
+  opacity: 0.6;
+}
+
+/* Now-playing indicator on phrase btn */
+.phrase-btn.playing {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
 }
 </style>
 </head>
 <body>
 
 <header>
-  <div class="title-row">
+  <div class="row1">
     <h1>★ 星空ツアー翻訳</h1>
-    <button class="theme-toggle" id="themeToggle">昼テーマ</button>
+    <button class="icon-btn" id="selectToggle" aria-label="選択モード">☑ 選択</button>
+    <button class="icon-btn" id="themeToggle" aria-label="テーマ">☀</button>
+  </div>
+  <div class="speed-row">
+    <span class="label">再生速度:</span>
+    <button class="speed-btn" data-speed="0.7">0.7x</button>
+    <button class="speed-btn active" data-speed="1.0">1.0x</button>
+    <button class="speed-btn" data-speed="1.2">1.2x</button>
+    <button class="speed-btn" data-speed="1.5">1.5x</button>
   </div>
   <nav id="tabs"></nav>
 </header>
 
 <main id="phrases"></main>
+
+<div id="action-bar">
+  <div class="action-count" id="actionCount">0個選択中</div>
+  <button class="action-btn" id="clearSelected">クリア</button>
+  <button class="action-btn primary" id="playSelected">▶ 再生</button>
+</div>
 
 <div id="modal">
   <div class="modal-header">
@@ -235,109 +355,149 @@ main {
 </div>
 
 <script>
+// Each phrase: { ja, ru (ruby string with "korean|katakana" tokens), h (audio hash), pose? }
 const PHRASES = [
   {
-    category: "① 開始",
+    c: "① 開始",
     items: [
-      { ja: "こんにちは。本日はよろしくお願いします。", ko: "안녕하세요. 오늘 잘 부탁드립니다." },
-      { ja: "私は岡村です。本日のガイドを担当します。", ko: "저는 오카무라입니다. 오늘 가이드를 맡고 있습니다." },
-      { ja: "申し訳ありません。私は韓国語が話せないので、このアプリで対応します。", ko: "죄송합니다. 저는 한국어를 못해서 이 앱으로 안내해 드리겠습니다." },
-      { ja: "ご質問にはお答えできない場合があります。ご了承ください。", ko: "질문에는 답변드리기 어려울 수 있습니다. 양해 부탁드립니다." },
-      { ja: "本日は星空と一緒にお客様を撮影する『星空撮影』ツアーです。", ko: "오늘은 별이 빛나는 하늘과 함께 손님을 촬영하는 '별 사진 촬영' 투어입니다." },
-      { ja: "帰りは今来た道を通ってお帰りください。", ko: "돌아가실 때는 지금 오신 길로 돌아가 주세요." }
+      { ja: "こんにちは。本日はよろしくお願いします。", ru: "안녕하세요.|アンニョンハセヨ 오늘|オヌル 잘|チャル 부탁드립니다.|プタッドゥリムニダ", h: "0e8e5fd68c" },
+      { ja: "私は岡村です。本日のガイドを担当します。", ru: "저는|チョヌン 오카무라입니다.|オカムライムニダ 오늘|オヌル 가이드를|カイドゥルル 맡고|マッコ 있습니다.|イッスムニダ", h: "10a4737208" },
+      { ja: "申し訳ありません。私は韓国語が話せないので、このアプリで対応します。", ru: "죄송합니다.|チェソンハムニダ 저는|チョヌン 한국어를|ハングゴルル 못해서|モテソ 이|イ 앱으로|エブロ 안내해|アンネヘ 드리겠습니다.|ドゥリゲッスムニダ", h: "33e7228a3b" },
+      { ja: "ご質問にはお答えできない場合があります。ご了承ください。", ru: "질문에는|チルムネヌン 답변드리기|タッピョンドゥリギ 어려울|オリョウル 수|ス 있습니다.|イッスムニダ 양해|ヤンヘ 부탁드립니다.|プタッドゥリムニダ", h: "5dba4695ac" },
+      { ja: "本日は星空と一緒にお客様を撮影する『星空撮影』ツアーです。", ru: "오늘은|オヌルン 별이|ピョリ 빛나는|ピンナヌン 하늘과|ハヌルグァ 함께|ハムッケ 손님을|ソンニムル 촬영하는|チャリョンハヌン '별|ピョル 사진|サジン 촬영'|チャリョン 투어입니다.|トゥオイムニダ", h: "364b1a85f3" },
+      { ja: "帰りは今来た道を通ってお帰りください。", ru: "돌아가실|トラガシル 때는|ッテヌン 지금|チグム 오신|オシン 길로|キルロ 돌아가|トラガ 주세요.|ジュセヨ", h: "ae1e3c9757" }
     ]
   },
   {
-    category: "② 移動・注意",
+    c: "② 移動・注意",
     items: [
-      { ja: "これから海まで案内します。ついて来てください。", ko: "지금부터 바다까지 안내해 드리겠습니다. 따라와 주세요." },
-      { ja: "道中が少し険しいので、足元にご注意ください。", ko: "가는 길이 조금 험하니 발밑을 조심해 주세요." },
-      { ja: "周りの木々にもご注意ください。", ko: "주변 나무에도 주의해 주세요." },
-      { ja: "自然の生き物がいるので、踏まないように気をつけてください。", ko: "자연 생물이 있으니 밟지 않도록 조심해 주세요." },
-      { ja: "運が良ければヤシガニも見られます。", ko: "운이 좋으면 야자집게(코코넛크랩)도 볼 수 있습니다." },
-      { ja: "ゆっくりで大丈夫ですよ。", ko: "천천히 오셔도 괜찮습니다." }
+      { ja: "これから海まで案内します。ついて来てください。", ru: "지금부터|チグムプト 바다까지|パダッカジ 안내해|アンネヘ 드리겠습니다.|ドゥリゲッスムニダ 따라와|ッタラワ 주세요.|ジュセヨ", h: "d3fce77bf9" },
+      { ja: "道中が少し険しいので、足元にご注意ください。", ru: "가는|カヌン 길이|キリ 조금|チョグム 험하니|ホムハニ 발밑을|パルミットゥル 조심해|チョシメ 주세요.|ジュセヨ", h: "1c4c9635a3" },
+      { ja: "周りの木々にもご注意ください。", ru: "주변|チュビョン 나무에도|ナムエド 주의해|チュイヘ 주세요.|ジュセヨ", h: "afb16ce8df" },
+      { ja: "自然の生き物がいるので、踏まないように気をつけてください。", ru: "자연|チャヨン 생물이|センムリ 있으니|イッスニ 밟지|パルッチ 않도록|アントロッ 조심해|チョシメ 주세요.|ジュセヨ", h: "e45f94a01d" },
+      { ja: "運が良ければヤシガニも見られます。", ru: "운이|ウニ 좋으면|チョウミョン 야자집게도|ヤジャジッケド 볼|ボル 수|ス 있습니다.|イッスムニダ", h: "6a03715296" },
+      { ja: "ゆっくりで大丈夫ですよ。", ru: "천천히|チョンチョニ 오셔도|オショド 괜찮습니다.|クェンチャンスムニダ", h: "8666948203" }
     ]
   },
   {
-    category: "③ 撮影場所",
+    c: "③ 撮影場所",
     items: [
-      { ja: "砂浜の岩の上に立ってください。", ko: "모래사장의 바위 위에 서 주세요." },
-      { ja: "砂浜の岩に座ってください。", ko: "모래사장의 바위에 앉아 주세요." },
-      { ja: "もう少し中央に寄ってください。", ko: "조금 더 중앙으로 모여 주세요." },
-      { ja: "1組につき5カットまで撮影します。", ko: "한 팀당 5컷까지 촬영합니다." }
+      { ja: "砂浜の岩の上に立ってください。", ru: "모래사장의|モレサジャンエ 바위|パウィ 위에|ウィエ 서|ソ 주세요.|ジュセヨ", h: "e8c1c843b2" },
+      { ja: "砂浜の岩に座ってください。", ru: "모래사장의|モレサジャンエ 바위에|パウィエ 앉아|アンジャ 주세요.|ジュセヨ", h: "0c249962d3" },
+      { ja: "もう少し中央に寄ってください。", ru: "조금|チョグム 더|ト 중앙으로|チュンアンウロ 모여|モヨ 주세요.|ジュセヨ", h: "b33e1b01bf" },
+      { ja: "1組につき5カットまで撮影します。", ru: "한|ハン 팀당|ティムダン 5컷까지|オーコッカジ 촬영합니다.|チャリョンハムニダ", h: "39a131be59" }
     ]
   },
   {
-    category: "④ ポーズ選択",
+    c: "④ ポーズ選択",
     items: [
-      { ja: "このパネルから1〜7番のポーズを選んでください。", ko: "이 패널에서 1번부터 7번까지 포즈를 골라 주세요." },
-      { ja: "次のポーズに移ります。", ko: "다음 포즈로 넘어가겠습니다." },
-      { ja: "1番のポーズでお願いします。(後ろ姿)", ko: "1번 포즈로 부탁드립니다. (뒷모습)", pose: "1" },
-      { ja: "2番のポーズでお願いします。(向き合い)", ko: "2번 포즈로 부탁드립니다. (마주보기)", pose: "2" },
-      { ja: "3番のポーズでお願いします。(正面・指さし)", ko: "3번 포즈로 부탁드립니다. (정면에서 손가락으로 가리키기)", pose: "3" },
-      { ja: "4番のポーズでお願いします。(後ろ姿・指さし)", ko: "4번 포즈로 부탁드립니다. (뒷모습에서 손가락으로 가리키기)", pose: "4" },
-      { ja: "5番のポーズでお願いします。(空を見上げる)", ko: "5번 포즈로 부탁드립니다. (정면에서 하늘을 바라보기)", pose: "5" },
-      { ja: "6番のポーズでお願いします。(団体・各自違う方向)", ko: "6번 포즈로 부탁드립니다. (단체·각자 다른 방향 보기)", pose: "6" },
-      { ja: "7番のポーズでお願いします。(団体・同じ方向)", ko: "7번 포즈로 부탁드립니다. (단체·같은 방향 보기)", pose: "7" }
+      { ja: "このパネルから1〜7番のポーズを選んでください。", ru: "이|イ 패널에서|ペノレソ 1번부터|イルボンプト 7번까지|チルボンッカジ 포즈를|ポジュルル 골라|コルラ 주세요.|ジュセヨ", h: "7c6098bdc6" },
+      { ja: "次のポーズに移ります。", ru: "다음|タウム 포즈로|ポジュロ 넘어가겠습니다.|ノモガゲッスムニダ", h: "a0fb75cee9" },
+      { ja: "1番のポーズでお願いします。(後ろ姿)", ru: "1번|イルボン 포즈로|ポジュロ 부탁드립니다.|プタッドゥリムニダ 뒷모습이에요.|ティンモスビエヨ", h: "45a1c3aa74", pose: "1" },
+      { ja: "2番のポーズでお願いします。(向き合い)", ru: "2번|イーボン 포즈로|ポジュロ 부탁드립니다.|プタッドゥリムニダ 마주보기예요.|マジュボギイェヨ", h: "d4e6f64d42", pose: "2" },
+      { ja: "3番のポーズでお願いします。(正面・指さし)", ru: "3번|サムボン 포즈로|ポジュロ 부탁드립니다.|プタッドゥリムニダ 정면에서|チョンミョネソ 손가락으로|ソンカラグロ 가리켜|カリキョ 주세요.|ジュセヨ", h: "b06fa923ea", pose: "3" },
+      { ja: "4番のポーズでお願いします。(後ろ姿・指さし)", ru: "4번|サーボン 포즈로|ポジュロ 부탁드립니다.|プタッドゥリムニダ 뒷모습에서|ティンモスベソ 손가락으로|ソンカラグロ 가리켜|カリキョ 주세요.|ジュセヨ", h: "2cacfc9279", pose: "4" },
+      { ja: "5番のポーズでお願いします。(空を見上げる)", ru: "5번|オーボン 포즈로|ポジュロ 부탁드립니다.|プタッドゥリムニダ 정면에서|チョンミョネソ 하늘을|ハヌルル 바라봐|パラボァ 주세요.|ジュセヨ", h: "a0f0e9ea07", pose: "5" },
+      { ja: "6番のポーズでお願いします。(団体・各自違う方向)", ru: "6번|ユッボン 포즈로|ポジュロ 부탁드립니다.|プタッドゥリムニダ 단체로|タンチェロ 각자|カクチャ 다른|タルン 방향을|パンヒャンウル 봐|ボァ 주세요.|ジュセヨ", h: "06b908a0eb", pose: "6" },
+      { ja: "7番のポーズでお願いします。(団体・同じ方向)", ru: "7번|チルボン 포즈로|ポジュロ 부탁드립니다.|プタッドゥリムニダ 단체로|タンチェロ 같은|カトゥン 방향을|パンヒャンウル 봐|ボァ 주세요.|ジュセヨ", h: "c5f61001d6", pose: "7" }
     ]
   },
   {
-    category: "⑤ 撮影中",
+    c: "⑤ 撮影中",
     items: [
-      { ja: "「スタート」と言ったら動かないでください。", ko: "'스타트'라고 하면 움직이지 말아 주세요." },
-      { ja: "「OK」と言うまでそのままお願いします。", ko: "'OK'라고 할 때까지 그대로 있어 주세요." },
-      { ja: "動くと写真がブレてしまいます。", ko: "움직이면 사진이 흔들립니다." },
-      { ja: "息を止めなくて大丈夫です。", ko: "숨을 참지 않으셔도 괜찮습니다." },
-      { ja: "星に向かって指をさしてください。", ko: "별을 향해 손가락으로 가리켜 주세요." },
-      { ja: "指が体にかぶらないようにしてください。", ko: "손가락이 몸에 가려지지 않도록 해 주세요." },
-      { ja: "他の人と重ならないようにしてください。", ko: "다른 사람과 겹치지 않도록 해 주세요." },
-      { ja: "ライトをつけます。少し眩しいです。", ko: "조명을 켜겠습니다. 조금 눈부실 수 있습니다." },
-      { ja: "ライトを消します。", ko: "조명을 끄겠습니다." },
-      { ja: "もう一度撮ります。", ko: "한 번 더 찍겠습니다." },
-      { ja: "撮れました!ありがとうございます。", ko: "찍었습니다! 감사합니다." }
+      { ja: "「スタート」と言ったら動かないでください。", ru: "'스타트'라고|スタートゥラゴ 하면|ハミョン 움직이지|ウムジギジ 말아|マラ 주세요.|ジュセヨ", h: "3871a55a61" },
+      { ja: "「OK」と言うまでそのままお願いします。", ru: "'OK'라고|オーケーラゴ 할|ハル 때까지|ッテッカジ 그대로|クデロ 있어|イッソ 주세요.|ジュセヨ", h: "cadeb055a5" },
+      { ja: "動くと写真がブレてしまいます。", ru: "움직이면|ウムジギミョン 사진이|サジニ 흔들립니다.|フンドゥルリムニダ", h: "6302b099d8" },
+      { ja: "息を止めなくて大丈夫です。", ru: "숨을|スムル 참지|チャムジ 않으셔도|アヌショド 괜찮습니다.|クェンチャンスムニダ", h: "d8d34af156" },
+      { ja: "星に向かって指をさしてください。", ru: "별을|ピョルル 향해|ヒャンヘ 손가락으로|ソンカラグロ 가리켜|カリキョ 주세요.|ジュセヨ", h: "fd49fa6349" },
+      { ja: "指が体にかぶらないようにしてください。", ru: "손가락이|ソンカラギ 몸에|モメ 가려지지|カリョジジ 않도록|アントロッ 해|ヘ 주세요.|ジュセヨ", h: "a8a9c73fd9" },
+      { ja: "他の人と重ならないようにしてください。", ru: "다른|タルン 사람과|サラムグァ 겹치지|キョプチジ 않도록|アントロッ 해|ヘ 주세요.|ジュセヨ", h: "e1ec908574" },
+      { ja: "ライトをつけます。少し眩しいです。", ru: "조명을|チョミョンウル 켜겠습니다.|キョゲッスムニダ 조금|チョグム 눈부실|ヌンブシル 수|ス 있습니다.|イッスムニダ", h: "20fb08d85b" },
+      { ja: "ライトを消します。", ru: "조명을|チョミョンウル 끄겠습니다.|ックゲッスムニダ", h: "a89f157843" },
+      { ja: "もう一度撮ります。", ru: "한|ハン 번|ボン 더|ト 찍겠습니다.|ッチッケッスムニダ", h: "da944b6641" },
+      { ja: "撮れました!ありがとうございます。", ru: "찍었습니다!|ッチゴッスムニダ 감사합니다.|カムサハムニダ", h: "5d6f59d7c0" }
     ]
   },
   {
-    category: "⑥ 微調整",
+    c: "⑥ 微調整",
     items: [
-      { ja: "もう少し右に回ってください。", ko: "조금 더 오른쪽으로 돌아 주세요." },
-      { ja: "もう少し左に回ってください。", ko: "조금 더 왼쪽으로 돌아 주세요." },
-      { ja: "指を右に向けてください。", ko: "손가락을 오른쪽으로 향해 주세요." },
-      { ja: "指を上に向けてください。", ko: "손가락을 위로 향해 주세요." },
-      { ja: "指を左に向けてください。", ko: "손가락을 왼쪽으로 향해 주세요." },
-      { ja: "顎を上げてください。", ko: "턱을 올려 주세요." },
-      { ja: "顎を下げてください。", ko: "턱을 내려 주세요." },
-      { ja: "もう少し近づいてください。", ko: "조금 더 가까이 와 주세요." },
-      { ja: "もう少し離れてください。", ko: "조금 더 떨어져 주세요." },
-      { ja: "カメラの方を見てください。", ko: "카메라 쪽을 봐 주세요." },
-      { ja: "カメラを見ないでください。", ko: "카메라를 보지 마세요." },
-      { ja: "視線を遠くへ向けてください。", ko: "시선을 멀리 향해 주세요." },
-      { ja: "笑顔でお願いします。", ko: "웃어 주세요." },
-      { ja: "自然な表情で大丈夫です。", ko: "자연스러운 표정으로 괜찮습니다." }
+      { ja: "もう少し右に回ってください。", ru: "조금|チョグム 더|ト 오른쪽으로|オルンッチョグロ 돌아|トラ 주세요.|ジュセヨ", h: "ba70b0e4a0" },
+      { ja: "もう少し左に回ってください。", ru: "조금|チョグム 더|ト 왼쪽으로|ウェンッチョグロ 돌아|トラ 주세요.|ジュセヨ", h: "ec2f311ac1" },
+      { ja: "指を右に向けてください。", ru: "손가락을|ソンカラグル 오른쪽으로|オルンッチョグロ 향해|ヒャンヘ 주세요.|ジュセヨ", h: "bc121c5edd" },
+      { ja: "指を上に向けてください。", ru: "손가락을|ソンカラグル 위로|ウィロ 향해|ヒャンヘ 주세요.|ジュセヨ", h: "735dc41915" },
+      { ja: "指を左に向けてください。", ru: "손가락을|ソンカラグル 왼쪽으로|ウェンッチョグロ 향해|ヒャンヘ 주세요.|ジュセヨ", h: "fd3f6f9f0a" },
+      { ja: "顎を上げてください。", ru: "턱을|トグル 올려|オルリョ 주세요.|ジュセヨ", h: "39c3f48593" },
+      { ja: "顎を下げてください。", ru: "턱을|トグル 내려|ネリョ 주세요.|ジュセヨ", h: "34613c5280" },
+      { ja: "もう少し近づいてください。", ru: "조금|チョグム 더|ト 가까이|カッカイ 와|ワ 주세요.|ジュセヨ", h: "91f1d500fa" },
+      { ja: "もう少し離れてください。", ru: "조금|チョグム 더|ト 떨어져|ットロジョ 주세요.|ジュセヨ", h: "9e82de57b4" },
+      { ja: "カメラの方を見てください。", ru: "카메라|カメラ 쪽을|ッチョグル 봐|ボァ 주세요.|ジュセヨ", h: "2799e1ece7" },
+      { ja: "カメラを見ないでください。", ru: "카메라를|カメラルル 보지|ボジ 마세요.|マセヨ", h: "2f50b82923" },
+      { ja: "視線を遠くへ向けてください。", ru: "시선을|シソヌル 멀리|モルリ 향해|ヒャンヘ 주세요.|ジュセヨ", h: "f3e29b1156" },
+      { ja: "笑顔でお願いします。", ru: "웃어|ウソ 주세요.|ジュセヨ", h: "1deb7fdffd" },
+      { ja: "自然な表情で大丈夫です。", ru: "자연스러운|チャヨンスロウン 표정으로|ピョジョンウロ 괜찮습니다.|クェンチャンスムニダ", h: "4e3d40b20d" }
     ]
   },
   {
-    category: "⑦ 終了",
+    c: "⑦ 終了",
     items: [
-      { ja: "あと1枚で終わりです。", ko: "한 장 남았습니다." },
-      { ja: "最後のカットです。", ko: "마지막 컷입니다." },
-      { ja: "これで撮影は終了です。お疲れ様でした。", ko: "이것으로 촬영을 마치겠습니다. 수고 많으셨습니다." },
-      { ja: "写真は後ほどお送りします。", ko: "사진은 나중에 보내드리겠습니다." },
-      { ja: "本日はありがとうございました。", ko: "오늘 감사했습니다." },
-      { ja: "気をつけてお帰りください。", ko: "조심히 돌아가세요." }
+      { ja: "あと1枚で終わりです。", ru: "한|ハン 장|ジャン 남았습니다.|ナマッスムニダ", h: "ea32d5dd00" },
+      { ja: "最後のカットです。", ru: "마지막|マジマッ 컷입니다.|コッシムニダ", h: "22aacbfedc" },
+      { ja: "これで撮影は終了です。お疲れ様でした。", ru: "이것으로|イゴスロ 촬영을|チャリョンウル 마치겠습니다.|マチゲッスムニダ 수고|スゴ 많으셨습니다.|マヌショッスムニダ", h: "23c6e44548" },
+      { ja: "写真は後ほどお送りします。", ru: "사진은|サジヌン 나중에|ナジュンエ 보내드리겠습니다.|ボネドゥリゲッスムニダ", h: "c3b8990320" },
+      { ja: "本日はありがとうございました。", ru: "오늘|オヌル 감사했습니다.|カムサヘッスムニダ", h: "63c01b152f" },
+      { ja: "気をつけてお帰りください。", ru: "조심히|チョシミ 돌아가세요.|トラガセヨ", h: "b0236f7f82" }
     ]
   },
   {
-    category: "⑧ 緊急",
+    c: "⑧ 緊急",
     items: [
-      { ja: "動かないでください。危ないです。", ko: "움직이지 마세요. 위험합니다." },
-      { ja: "こちらに来てください。", ko: "이쪽으로 오세요." },
-      { ja: "大丈夫ですか?", ko: "괜찮으세요?" },
-      { ja: "少しお待ちください。", ko: "잠시만 기다려 주세요." }
+      { ja: "動かないでください。危ないです。", ru: "움직이지|ウムジギジ 마세요.|マセヨ 위험합니다.|ウィホムハムニダ", h: "23b8e6722c" },
+      { ja: "こちらに来てください。", ru: "이쪽으로|イッチョグロ 오세요.|オセヨ", h: "21593d4ec6" },
+      { ja: "大丈夫ですか?", ru: "괜찮으세요?|クェンチャヌセヨ", h: "24822ca002" },
+      { ja: "少しお待ちください。", ru: "잠시만|チャムシマン 기다려|キダリョ 주세요.|ジュセヨ", h: "679be7c22b" }
     ]
   }
 ];
 
+// === Utilities ===
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function renderRuby(ru) {
+  return ru.split(/\s+/).filter(Boolean).map(t => {
+    const i = t.indexOf('|');
+    if (i < 0) return escapeHtml(t);
+    const base = t.slice(0, i);
+    const reading = t.slice(i + 1);
+    return `<ruby>${escapeHtml(base)}<rt>${escapeHtml(reading)}</rt></ruby>`;
+  }).join(' ');
+}
+
+function extractKo(ru) {
+  return ru.split(/\s+/).filter(Boolean).map(t => {
+    const i = t.indexOf('|');
+    return i < 0 ? t : t.slice(0, i);
+  }).join(' ');
+}
+
+// === State ===
+const STORAGE_THEME = 'theme';
+const STORAGE_CAT = 'lastCategory';
+const STORAGE_SPEED = 'speed';
+
+let currentCategory = parseInt(localStorage.getItem(STORAGE_CAT) || '0', 10);
+if (currentCategory >= PHRASES.length || currentCategory < 0) currentCategory = 0;
+
+let currentSpeed = parseFloat(localStorage.getItem(STORAGE_SPEED) || '1.0');
+let selectMode = false;
+const selected = []; // array of {cat, idx, item}
+let isPlayingBatch = false;
+let stopBatchRequested = false;
+let currentAudio = null;
+
+// === Elements ===
 const tabsEl = document.getElementById('tabs');
 const phrasesEl = document.getElementById('phrases');
 const modal = document.getElementById('modal');
@@ -348,20 +508,75 @@ const modalPoseNum = document.getElementById('modalPoseNum');
 const modalClose = document.getElementById('modalClose');
 const modalSpeak = document.getElementById('modalSpeak');
 const themeToggle = document.getElementById('themeToggle');
+const selectToggle = document.getElementById('selectToggle');
+const actionBar = document.getElementById('action-bar');
+const actionCount = document.getElementById('actionCount');
+const playSelectedBtn = document.getElementById('playSelected');
+const clearSelectedBtn = document.getElementById('clearSelected');
+const speedBtns = document.querySelectorAll('.speed-btn');
 
-let currentCategory = parseInt(localStorage.getItem('lastCategory') || '0', 10);
-if (currentCategory >= PHRASES.length) currentCategory = 0;
-let currentKoText = '';
+// === Audio ===
+function stopAllAudio() {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+  }
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+}
 
+function playItem(item, opts = {}) {
+  return new Promise((resolve) => {
+    stopAllAudio();
+    const audio = new Audio(`audio/${item.h}.mp3`);
+    audio.playbackRate = currentSpeed;
+    currentAudio = audio;
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      if (currentAudio === audio) currentAudio = null;
+      resolve();
+    };
+    audio.onended = finish;
+    audio.onerror = () => {
+      if (resolved) return;
+      // Fallback to TTS
+      speakKoreanFallback(extractKo(item.ru), currentSpeed).then(finish);
+    };
+    audio.play().catch(() => {
+      if (resolved) return;
+      speakKoreanFallback(extractKo(item.ru), currentSpeed).then(finish);
+    });
+  });
+}
+
+function speakKoreanFallback(text, rate) {
+  return new Promise((resolve) => {
+    if (!('speechSynthesis' in window)) return resolve();
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ko-KR';
+    u.rate = rate || 1;
+    const voices = speechSynthesis.getVoices();
+    const koVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko'));
+    if (koVoice) u.voice = koVoice;
+    u.onend = resolve;
+    u.onerror = resolve;
+    speechSynthesis.speak(u);
+  });
+}
+
+// === Render ===
 function renderTabs() {
   tabsEl.innerHTML = '';
   PHRASES.forEach((cat, i) => {
     const btn = document.createElement('button');
     btn.className = 'tab' + (i === currentCategory ? ' active' : '');
-    btn.textContent = cat.category;
+    btn.textContent = cat.c;
     btn.onclick = () => {
       currentCategory = i;
-      localStorage.setItem('lastCategory', String(i));
+      localStorage.setItem(STORAGE_CAT, String(i));
       renderAll();
       btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     };
@@ -371,11 +586,16 @@ function renderTabs() {
   if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
 }
 
+function isSelected(item) {
+  return selected.some(s => s.h === item.h);
+}
+
 function renderPhrases() {
   phrasesEl.innerHTML = '';
-  PHRASES[currentCategory].items.forEach(item => {
+  PHRASES[currentCategory].items.forEach((item, idx) => {
     const btn = document.createElement('button');
-    btn.className = 'phrase-btn' + (item.pose ? ' has-number' : '');
+    btn.className = 'phrase-btn' + (item.pose ? ' has-pose' : '') + (isSelected(item) ? ' selected' : '');
+    btn.dataset.h = item.h;
     if (item.pose) {
       const num = document.createElement('div');
       num.className = 'pose-num';
@@ -386,13 +606,18 @@ function renderPhrases() {
     ja.className = 'ja';
     ja.textContent = item.ja;
     btn.appendChild(ja);
-    const ko = document.createElement('div');
-    ko.className = 'ko';
-    ko.textContent = item.ko;
-    btn.appendChild(ko);
-    btn.onclick = () => openModal(item);
+    const koRuby = document.createElement('div');
+    koRuby.className = 'ko-ruby';
+    koRuby.innerHTML = renderRuby(item.ru);
+    btn.appendChild(koRuby);
+    const marker = document.createElement('div');
+    marker.className = 'select-marker';
+    marker.textContent = '✓';
+    btn.appendChild(marker);
+    btn.onclick = () => onPhraseClick(item, btn);
     phrasesEl.appendChild(btn);
   });
+  updateActionBar();
 }
 
 function renderAll() {
@@ -401,59 +626,181 @@ function renderAll() {
   window.scrollTo(0, 0);
 }
 
-function speakKorean(text) {
-  if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ko-KR';
-  u.rate = 0.95;
-  const voices = speechSynthesis.getVoices();
-  const koVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko'));
-  if (koVoice) u.voice = koVoice;
-  speechSynthesis.speak(u);
+// === Click handler ===
+function onPhraseClick(item, btn) {
+  if (selectMode) {
+    toggleSelect(item, btn);
+  } else {
+    openModal(item);
+  }
 }
 
+function toggleSelect(item, btn) {
+  const i = selected.findIndex(s => s.h === item.h);
+  if (i >= 0) {
+    selected.splice(i, 1);
+    btn.classList.remove('selected');
+  } else {
+    selected.push(item);
+    btn.classList.add('selected');
+    // Show selection order in marker
+  }
+  // Update marker numbers (selection order)
+  const markers = phrasesEl.querySelectorAll('.phrase-btn.selected .select-marker');
+  markers.forEach(m => {
+    const h = m.parentElement.dataset.h;
+    const order = selected.findIndex(s => s.h === h);
+    m.textContent = order >= 0 ? String(order + 1) : '✓';
+  });
+  updateActionBar();
+}
+
+function updateActionBar() {
+  if (selectMode && selected.length > 0) {
+    actionBar.classList.add('visible');
+    actionCount.textContent = `${selected.length}個選択中`;
+  } else {
+    actionBar.classList.remove('visible');
+  }
+}
+
+// === Modal ===
 function openModal(item) {
   modalJa.textContent = item.ja;
-  modalKo.textContent = item.ko;
+  modalKo.innerHTML = renderRuby(item.ru);
   if (item.pose) {
     modalPoseNum.textContent = item.pose;
     modalPoseNum.style.display = 'block';
   } else {
     modalPoseNum.style.display = 'none';
   }
-  currentKoText = item.ko;
   modal.classList.add('active');
-  setTimeout(() => speakKorean(item.ko), 150);
+  modal.dataset.currentH = item.h;
+  setTimeout(() => playItem(item), 100);
 }
 
 function closeModal() {
   modal.classList.remove('active');
-  speechSynthesis.cancel();
+  stopAllAudio();
 }
 
-modalClose.onclick = closeModal;
+modalClose.onclick = (e) => { e.stopPropagation(); closeModal(); };
 modalBody.onclick = closeModal;
 modalSpeak.onclick = (e) => {
   e.stopPropagation();
-  speakKorean(currentKoText);
+  const h = modal.dataset.currentH;
+  for (const cat of PHRASES) {
+    const item = cat.items.find(i => i.h === h);
+    if (item) { playItem(item); return; }
+  }
 };
 
-themeToggle.onclick = () => {
-  document.body.classList.toggle('normal-theme');
-  const isNormal = document.body.classList.contains('normal-theme');
-  themeToggle.textContent = isNormal ? '夜テーマ' : '昼テーマ';
-  localStorage.setItem('theme', isNormal ? 'normal' : 'night');
-  document.querySelector('meta[name="theme-color"]')
-    .setAttribute('content', isNormal ? '#0a1420' : '#000000');
-};
-
-if (localStorage.getItem('theme') === 'normal') {
-  document.body.classList.add('normal-theme');
-  themeToggle.textContent = '夜テーマ';
-  document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0a1420');
+// === Theme ===
+function applyTheme(isDay) {
+  document.body.classList.toggle('normal-theme', isDay);
+  themeToggle.textContent = isDay ? '☾' : '☀';
+  document.querySelector('meta[name="theme-color"]').setAttribute(
+    'content', isDay ? '#0a1420' : '#000000');
 }
+themeToggle.onclick = () => {
+  const isDay = !document.body.classList.contains('normal-theme');
+  applyTheme(isDay);
+  localStorage.setItem(STORAGE_THEME, isDay ? 'day' : 'night');
+};
+applyTheme(localStorage.getItem(STORAGE_THEME) === 'day');
 
+// === Speed ===
+function applySpeed(s) {
+  currentSpeed = s;
+  speedBtns.forEach(b => b.classList.toggle('active', parseFloat(b.dataset.speed) === s));
+  localStorage.setItem(STORAGE_SPEED, String(s));
+}
+speedBtns.forEach(b => {
+  b.onclick = () => applySpeed(parseFloat(b.dataset.speed));
+});
+applySpeed(currentSpeed);
+
+// === Select mode ===
+selectToggle.onclick = () => {
+  selectMode = !selectMode;
+  document.body.classList.toggle('select-mode', selectMode);
+  selectToggle.classList.toggle('active', selectMode);
+  selectToggle.textContent = selectMode ? '✓ 選択中' : '☑ 選択';
+  if (!selectMode) {
+    selected.length = 0;
+    document.querySelectorAll('.phrase-btn.selected').forEach(b => b.classList.remove('selected'));
+  }
+  updateActionBar();
+};
+
+clearSelectedBtn.onclick = () => {
+  selected.length = 0;
+  document.querySelectorAll('.phrase-btn.selected').forEach(b => b.classList.remove('selected'));
+  updateActionBar();
+};
+
+playSelectedBtn.onclick = async () => {
+  if (selected.length === 0 || isPlayingBatch) return;
+  isPlayingBatch = true;
+  stopBatchRequested = false;
+  playSelectedBtn.textContent = '⏸ 停止';
+  playSelectedBtn.onclick = () => { stopBatchRequested = true; };
+  for (let i = 0; i < selected.length; i++) {
+    if (stopBatchRequested) break;
+    const item = selected[i];
+    const btn = phrasesEl.querySelector(`.phrase-btn[data-h="${item.h}"]`);
+    if (btn) {
+      document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
+      btn.classList.add('playing');
+      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    await playItem(item);
+    if (stopBatchRequested) break;
+    if (i < selected.length - 1) {
+      await new Promise(r => setTimeout(r, 600));
+    }
+  }
+  document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
+  isPlayingBatch = false;
+  stopBatchRequested = false;
+  playSelectedBtn.textContent = '▶ 再生';
+  playSelectedBtn.onclick = arguments.callee;
+};
+
+// Re-bind playSelected because we replaced its onclick during play
+function bindPlaySelected() {
+  playSelectedBtn.onclick = async () => {
+    if (selected.length === 0 || isPlayingBatch) return;
+    isPlayingBatch = true;
+    stopBatchRequested = false;
+    playSelectedBtn.textContent = '⏸ 停止';
+    const stopHandler = () => { stopBatchRequested = true; stopAllAudio(); };
+    playSelectedBtn.onclick = stopHandler;
+    for (let i = 0; i < selected.length; i++) {
+      if (stopBatchRequested) break;
+      const item = selected[i];
+      const btn = phrasesEl.querySelector(`.phrase-btn[data-h="${item.h}"]`);
+      if (btn) {
+        document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
+        btn.classList.add('playing');
+        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      await playItem(item);
+      if (stopBatchRequested) break;
+      if (i < selected.length - 1) {
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+    document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
+    isPlayingBatch = false;
+    stopBatchRequested = false;
+    playSelectedBtn.textContent = '▶ 再生';
+    bindPlaySelected();
+  };
+}
+bindPlaySelected();
+
+// === Init ===
 if ('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = () => {};
   speechSynthesis.getVoices();
