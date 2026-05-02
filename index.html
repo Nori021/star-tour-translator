@@ -911,12 +911,13 @@ function renderWordsGrid() {
       actions.className = 'word-actions';
       actions.innerHTML = `<button class="word-action" data-act="del">✕</button>`;
       card.appendChild(actions);
-      actions.querySelector('.word-action').onclick = (e) => {
+      actions.querySelector('.word-action').onclick = async (e) => {
         e.stopPropagation();
         if (confirm(`「${w.ja}」を削除しますか?`)) {
           wordBlocks = wordBlocks.filter(x => x.id !== w.id);
           saveWordBlocks();
           renderWordsGrid();
+          await deleteAudio(w.id);
         }
       };
     }
@@ -1009,11 +1010,104 @@ function attachDragHandlers(card, grid) {
   card.addEventListener('touchcancel', cleanup);
 }
 
-function speakWord(w, cardEl) {
-  if (!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
+// === IndexedDB for word audio storage ===
+let audioDBPromise = null;
+function openAudioDB() {
+  if (audioDBPromise) return audioDBPromise;
+  audioDBPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open('star-tour-audio', 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains('audio')) {
+        db.createObjectStore('audio', { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = (e) => resolve(e.target.result);
+    req.onerror = (e) => reject(e.target.error);
+  });
+  return audioDBPromise;
+}
+async function saveAudio(id, blob) {
+  const db = await openAudioDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('audio', 'readwrite');
+    tx.objectStore('audio').put({ id, blob });
+    tx.oncomplete = resolve;
+    tx.onerror = (e) => reject(e.target.error);
+  });
+}
+async function loadAudio(id) {
+  try {
+    const db = await openAudioDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction('audio', 'readonly');
+      const req = tx.objectStore('audio').get(id);
+      req.onsuccess = (e) => resolve(e.target.result?.blob || null);
+      req.onerror = () => resolve(null);
+    });
+  } catch { return null; }
+}
+async function deleteAudio(id) {
+  try {
+    const db = await openAudioDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction('audio', 'readwrite');
+      tx.objectStore('audio').delete(id);
+      tx.oncomplete = resolve;
+      tx.onerror = resolve;
+    });
+  } catch {}
+}
+
+async function generateTTS(text, apiKey) {
+  const res = await fetch('https://api.openai.com/v1/audio/speech', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini-tts',
+      voice: 'shimmer',
+      input: text,
+      instructions: 'Speak in a bright, clear, youthful Korean female tour guide voice. Pronounce naturally and gently. Slightly higher pitch, friendly and welcoming.',
+      response_format: 'mp3',
+    }),
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`HTTP ${res.status}: ${t.slice(0, 80)}`);
+  }
+  return await res.blob();
+}
+
+let currentWordAudio = null;
+async function speakWord(w, cardEl) {
   document.querySelectorAll('.word-card.playing').forEach(c => c.classList.remove('playing'));
   if (cardEl) cardEl.classList.add('playing');
+  if (currentWordAudio) { try { currentWordAudio.pause(); } catch {} currentWordAudio = null; }
+  if ('speechSynthesis' in window) speechSynthesis.cancel();
+  const blob = await loadAudio(w.id);
+  if (blob) {
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.playbackRate = currentSpeed;
+    currentWordAudio = audio;
+    const cleanup = () => {
+      if (cardEl) cardEl.classList.remove('playing');
+      URL.revokeObjectURL(url);
+      if (currentWordAudio === audio) currentWordAudio = null;
+    };
+    audio.onended = cleanup;
+    audio.onerror = cleanup;
+    audio.play().catch(cleanup);
+    return;
+  }
+  // Fallback to browser TTS
+  if (!('speechSynthesis' in window)) {
+    if (cardEl) cardEl.classList.remove('playing');
+    return;
+  }
   const u = new SpeechSynthesisUtterance(w.ko);
   u.lang = 'ko-KR';
   u.rate = currentSpeed;
@@ -1106,17 +1200,35 @@ translateBtn.onclick = async () => {
   }
 };
 
-addSaveBtn.onclick = () => {
+addSaveBtn.onclick = async () => {
   if (!pendingTranslation) return;
-  wordBlocks.push({
-    id: Math.random().toString(36).slice(2, 10),
-    ja: pendingTranslation.ja,
-    ko: pendingTranslation.ko,
-    kana: pendingTranslation.kana,
-  });
-  saveWordBlocks();
-  closeAddModal();
-  if (currentCategory === WORDS_TAB) renderWordsGrid();
+  const key = localStorage.getItem('openaiKey');
+  if (!key) {
+    keySection.style.display = 'flex';
+    return;
+  }
+  addStatus.textContent = '🎤 shimmer音声を生成中...';
+  addStatus.className = 'status';
+  addStatus.style.display = 'block';
+  addSaveBtn.disabled = true;
+  try {
+    const blob = await generateTTS(pendingTranslation.ko, key);
+    const id = Math.random().toString(36).slice(2, 10);
+    await saveAudio(id, blob);
+    wordBlocks.push({
+      id,
+      ja: pendingTranslation.ja,
+      ko: pendingTranslation.ko,
+      kana: pendingTranslation.kana,
+    });
+    saveWordBlocks();
+    closeAddModal();
+    if (currentCategory === WORDS_TAB) renderWordsGrid();
+  } catch (e) {
+    addStatus.textContent = `音声生成失敗: ${e.message || e}`;
+    addStatus.className = 'status error';
+    addSaveBtn.disabled = false;
+  }
 };
 
 async function translateJaToKo(ja, apiKey) {
