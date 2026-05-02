@@ -258,6 +258,26 @@ body.select-mode .phrase-btn.selected .select-marker {
 }
 .word-card:active { background: var(--selected-bg); }
 .word-card.playing { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
+.word-card.selected {
+  background: var(--selected-bg);
+  border-color: var(--selected-border);
+}
+.word-card .select-marker {
+  display: none;
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 11px; font-weight: 700;
+  align-items: center; justify-content: center;
+  line-height: 1;
+}
+body.select-mode .word-card.selected .select-marker { display: flex; }
+body.normal-theme .word-card.selected .word-ja,
+body.normal-theme .word-card.selected .word-ko { color: #0f172a; }
+body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity: 1; }
 .word-card.drag-source { opacity: 0.25; }
 .word-card.drag-clone {
   position: fixed;
@@ -802,28 +822,44 @@ function stopAllAudio() {
   if ('speechSynthesis' in window) speechSynthesis.cancel();
 }
 
-function playItem(item, opts = {}) {
+async function playItem(item, opts = {}) {
+  stopAllAudio();
+  let audioUrl = null;
+  let revokeUrl = null;
+  if (item.h) {
+    audioUrl = `audio/${item.h}.mp3`;
+  } else if (item.id) {
+    const blob = await loadAudio(item.id);
+    if (blob) {
+      audioUrl = URL.createObjectURL(blob);
+      revokeUrl = audioUrl;
+    }
+  }
+  const fallbackText = item.ru ? extractKo(item.ru) : (item.ko || '');
   return new Promise((resolve) => {
-    stopAllAudio();
-    const audio = new Audio(`audio/${item.h}.mp3`);
+    if (!audioUrl) {
+      speakKoreanFallback(fallbackText, currentSpeed).then(resolve);
+      return;
+    }
+    const audio = new Audio(audioUrl);
     audio.playbackRate = currentSpeed;
     currentAudio = audio;
     let resolved = false;
     const finish = () => {
       if (resolved) return;
       resolved = true;
+      if (revokeUrl) URL.revokeObjectURL(revokeUrl);
       if (currentAudio === audio) currentAudio = null;
       resolve();
     };
     audio.onended = finish;
     audio.onerror = () => {
       if (resolved) return;
-      // Fallback to TTS
-      speakKoreanFallback(extractKo(item.ru), currentSpeed).then(finish);
+      speakKoreanFallback(fallbackText, currentSpeed).then(finish);
     };
     audio.play().catch(() => {
       if (resolved) return;
-      speakKoreanFallback(extractKo(item.ru), currentSpeed).then(finish);
+      speakKoreanFallback(fallbackText, currentSpeed).then(finish);
     });
   });
 }
@@ -892,8 +928,12 @@ function renderTabs() {
   if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
 }
 
+function itemKey(item) {
+  return item.h || item.id;
+}
 function isSelected(item) {
-  return selected.some(s => s.h === item.h);
+  const k = itemKey(item);
+  return selected.some(s => itemKey(s) === k);
 }
 
 function renderWordsView() {
@@ -1075,12 +1115,17 @@ function renderWordsGrid() {
   grid.innerHTML = '';
   wordBlocks.forEach((w) => {
     const card = document.createElement('div');
-    card.className = 'word-card';
+    card.className = 'word-card' + (isSelected(w) ? ' selected' : '');
     card.dataset.id = w.id;
     card.innerHTML = `
       <div class="word-ja">${escapeHtml(w.ja)}</div>
       <div class="word-ko"><ruby>${escapeHtml(w.ko)}<rt>${escapeHtml(w.kana || '')}</rt></ruby></div>
     `;
+    const marker = document.createElement('div');
+    marker.className = 'select-marker';
+    const order = selected.findIndex(s => itemKey(s) === w.id);
+    marker.textContent = order >= 0 ? String(order + 1) : '✓';
+    card.appendChild(marker);
     if (editWordsMode) {
       const actions = document.createElement('div');
       actions.className = 'word-actions';
@@ -1097,7 +1142,10 @@ function renderWordsGrid() {
       };
     }
     card.addEventListener('click', () => {
-      if (!card.dataset.dragJustEnded) {
+      if (card.dataset.dragJustEnded) return;
+      if (selectMode) {
+        toggleSelect(w, card);
+      } else {
         speakWord(w, card);
       }
     });
@@ -1557,20 +1605,20 @@ function onPhraseClick(item, btn) {
 }
 
 function toggleSelect(item, btn) {
-  const i = selected.findIndex(s => s.h === item.h);
+  const k = itemKey(item);
+  const i = selected.findIndex(s => itemKey(s) === k);
   if (i >= 0) {
     selected.splice(i, 1);
     btn.classList.remove('selected');
   } else {
     selected.push(item);
     btn.classList.add('selected');
-    // Show selection order in marker
   }
-  // Update marker numbers (selection order)
-  const markers = phrasesEl.querySelectorAll('.phrase-btn.selected .select-marker');
+  const markers = document.querySelectorAll('.phrase-btn.selected .select-marker, .word-card.selected .select-marker');
   markers.forEach(m => {
-    const h = m.parentElement.dataset.h;
-    const order = selected.findIndex(s => s.h === h);
+    const card = m.parentElement;
+    const k2 = card.dataset.h || card.dataset.id;
+    const order = selected.findIndex(s => itemKey(s) === k2);
     m.textContent = order >= 0 ? String(order + 1) : '✓';
   });
   updateActionBar();
@@ -1649,14 +1697,14 @@ selectToggle.onclick = () => {
   selectToggle.textContent = selectMode ? '✓ 選択中' : '☑ 選択';
   if (!selectMode) {
     selected.length = 0;
-    document.querySelectorAll('.phrase-btn.selected').forEach(b => b.classList.remove('selected'));
+    document.querySelectorAll('.phrase-btn.selected, .word-card.selected').forEach(b => b.classList.remove('selected'));
   }
   updateActionBar();
 };
 
 clearSelectedBtn.onclick = () => {
   selected.length = 0;
-  document.querySelectorAll('.phrase-btn.selected').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.phrase-btn.selected, .word-card.selected').forEach(b => b.classList.remove('selected'));
   updateActionBar();
 };
 
@@ -1668,22 +1716,25 @@ function bindPlaySelected() {
     playSelectedBtn.textContent = '⏸ 停止';
     const stopHandler = () => { stopBatchRequested = true; stopAllAudio(); };
     playSelectedBtn.onclick = stopHandler;
+    const allWords = selected.every(s => !s.h && s.id);
+    const gap = allWords ? 20 : 50;
     for (let i = 0; i < selected.length; i++) {
       if (stopBatchRequested) break;
       const item = selected[i];
-      const btn = phrasesEl.querySelector(`.phrase-btn[data-h="${item.h}"]`);
+      const k = item.h || item.id;
+      const btn = document.querySelector(`.phrase-btn[data-h="${k}"], .word-card[data-id="${k}"]`);
       if (btn) {
-        document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
+        document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
         btn.classList.add('playing');
         btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       await playItem(item);
       if (stopBatchRequested) break;
       if (i < selected.length - 1) {
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, gap));
       }
     }
-    document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
+    document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
     isPlayingBatch = false;
     stopBatchRequested = false;
     playSelectedBtn.textContent = '▶ 再生';
