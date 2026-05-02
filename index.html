@@ -13,17 +13,17 @@
 <title>星空ツアー翻訳 / 별 투어 번역</title>
 <style>
 :root {
-  --bg: #000;
-  --surface: #1a0606;
-  --border: #4a1010;
-  --text: #ff5a3c;
-  --text-dim: #a83020;
-  --text-faint: #6a1818;
-  --accent: #ff8866;
-  --accent-bg: #5a1818;
-  --button-bg: #1a0606;
-  --selected-bg: #5a1818;
-  --selected-border: #ff8866;
+  --bg: #0a1420;
+  --surface: #142436;
+  --border: #2a4060;
+  --text: #e8f0ff;
+  --text-dim: #8aa8d0;
+  --text-faint: #4a6080;
+  --accent: #5aa0ff;
+  --accent-bg: #2a5090;
+  --button-bg: #142436;
+  --selected-bg: #2a5090;
+  --selected-border: #5aa0ff;
 }
 body.normal-theme {
   --bg: #ffffff;
@@ -708,7 +708,7 @@ function applyTheme(isDay) {
   document.body.classList.toggle('normal-theme', isDay);
   themeToggle.textContent = isDay ? '☀ 昼' : '☾ 夜';
   document.querySelector('meta[name="theme-color"]').setAttribute(
-    'content', isDay ? '#ffffff' : '#000000');
+    'content', isDay ? '#ffffff' : '#0a1420');
 }
 themeToggle.onclick = () => {
   const isDay = !document.body.classList.contains('normal-theme');
@@ -747,35 +747,6 @@ clearSelectedBtn.onclick = () => {
   updateActionBar();
 };
 
-playSelectedBtn.onclick = async () => {
-  if (selected.length === 0 || isPlayingBatch) return;
-  isPlayingBatch = true;
-  stopBatchRequested = false;
-  playSelectedBtn.textContent = '⏸ 停止';
-  playSelectedBtn.onclick = () => { stopBatchRequested = true; };
-  for (let i = 0; i < selected.length; i++) {
-    if (stopBatchRequested) break;
-    const item = selected[i];
-    const btn = phrasesEl.querySelector(`.phrase-btn[data-h="${item.h}"]`);
-    if (btn) {
-      document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
-      btn.classList.add('playing');
-      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    await playItem(item);
-    if (stopBatchRequested) break;
-    if (i < selected.length - 1) {
-      await new Promise(r => setTimeout(r, 600));
-    }
-  }
-  document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
-  isPlayingBatch = false;
-  stopBatchRequested = false;
-  playSelectedBtn.textContent = '▶ 再生';
-  playSelectedBtn.onclick = arguments.callee;
-};
-
-// Re-bind playSelected because we replaced its onclick during play
 function bindPlaySelected() {
   playSelectedBtn.onclick = async () => {
     if (selected.length === 0 || isPlayingBatch) return;
@@ -796,7 +767,7 @@ function bindPlaySelected() {
       await playItem(item);
       if (stopBatchRequested) break;
       if (i < selected.length - 1) {
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, 150));
       }
     }
     document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
