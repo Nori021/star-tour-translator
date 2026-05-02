@@ -1047,7 +1047,21 @@ async function translateJaToKo(ja, apiKey) {
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       messages: [
-        { role: 'system', content: 'You translate Japanese to natural Korean for a tour guide. Output JSON only with the schema {"ko": "<polite Korean translation>", "kana": "<Japanese katakana approximation of the Korean pronunciation>"}. Use 합쇼체 (formal polite) when full sentences. For single nouns just translate them.' },
+        { role: 'system', content: `You translate Japanese to natural Korean for a tour guide context.
+
+Output strict JSON: {"ko": "<Korean>", "kana": "<Japanese katakana pronunciation>"}
+
+Rules:
+1. For a single noun input, output ONLY the Korean noun without any verb endings. Example: 海 -> {"ko":"바다","kana":"パダ"}
+2. For a sentence/phrase input, use polite formal Korean (합쇼체 with -습니다 / 해주세요).
+3. The kana field MUST be Japanese katakana characters (アイウエオ etc), NOT Korean Hangul. Japanese phonetic approximation of the Korean pronunciation, with each Korean word separated by a space.
+4. Use ッ for Korean tense consonants. Use ㅓ -> オ, ㅡ -> ウ.
+
+Examples:
+안녕하세요 -> アンニョンハセヨ
+손가락 -> ソンカラク
+잠시만 기다려 주세요 -> チャムシマン キダリョ ジュセヨ
+바다 -> パダ` },
         { role: 'user', content: ja },
       ],
       response_format: { type: 'json_object' },
