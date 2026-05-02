@@ -706,7 +706,7 @@ modalSpeak.onclick = (e) => {
 // === Theme ===
 function applyTheme(isDay) {
   document.body.classList.toggle('normal-theme', isDay);
-  themeToggle.textContent = isDay ? '☾' : '☀';
+  themeToggle.textContent = isDay ? '☀ 昼' : '☾ 夜';
   document.querySelector('meta[name="theme-color"]').setAttribute(
     'content', isDay ? '#ffffff' : '#000000');
 }
