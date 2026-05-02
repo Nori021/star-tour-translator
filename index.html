@@ -213,6 +213,68 @@ body.select-mode .phrase-btn.selected .select-marker {
   display: flex;
 }
 
+/* Free translation view */
+.translate-view {
+  display: flex; flex-direction: column;
+  gap: 12px;
+  padding: 4px 0;
+}
+.translate-view textarea {
+  width: 100%;
+  min-height: 160px;
+  font-size: 18px;
+  line-height: 1.5;
+  padding: 14px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-family: inherit;
+  resize: vertical;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.translate-view textarea:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.translate-view .big-btn {
+  background: var(--accent-bg);
+  color: #fff;
+  border: 1px solid var(--accent);
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+.translate-view .big-btn:active { opacity: 0.7; }
+.translate-view .secondary-btn {
+  background: var(--button-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 11px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.translate-view .help-box {
+  background: var(--button-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+.translate-view .help-box strong { color: var(--text); }
+.translate-view .help-box .step {
+  display: block;
+  padding: 2px 0;
+}
+
 /* Modal */
 #modal {
   position: fixed; inset: 0;
@@ -496,7 +558,7 @@ const STORAGE_CAT = 'lastCategory';
 const STORAGE_SPEED = 'speed';
 
 let currentCategory = parseInt(localStorage.getItem(STORAGE_CAT) || '0', 10);
-if (currentCategory >= PHRASES.length || currentCategory < 0) currentCategory = 0;
+if (currentCategory > PHRASES.length || currentCategory < 0) currentCategory = 0;
 
 let currentSpeed = parseFloat(localStorage.getItem(STORAGE_SPEED) || '1.0');
 let selectMode = false;
@@ -576,6 +638,8 @@ function speakKoreanFallback(text, rate) {
 }
 
 // === Render ===
+const TRANSLATE_TAB = PHRASES.length;
+
 function renderTabs() {
   tabsEl.innerHTML = '';
   PHRASES.forEach((cat, i) => {
@@ -590,6 +654,16 @@ function renderTabs() {
     };
     tabsEl.appendChild(btn);
   });
+  const tBtn = document.createElement('button');
+  tBtn.className = 'tab' + (currentCategory === TRANSLATE_TAB ? ' active' : '');
+  tBtn.textContent = '🌐 自由翻訳';
+  tBtn.onclick = () => {
+    currentCategory = TRANSLATE_TAB;
+    localStorage.setItem(STORAGE_CAT, String(TRANSLATE_TAB));
+    renderAll();
+    tBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+  tabsEl.appendChild(tBtn);
   const active = tabsEl.querySelector('.tab.active');
   if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
 }
@@ -598,7 +672,64 @@ function isSelected(item) {
   return selected.some(s => s.h === item.h);
 }
 
+function renderTranslateView() {
+  const saved = localStorage.getItem('translateInput') || '';
+  phrasesEl.innerHTML = `
+    <div class="translate-view">
+      <textarea id="translateInput" placeholder="日本語を入力してください..." spellcheck="false">${saved.replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]))}</textarea>
+      <button class="big-btn" id="shareTranslateBtn">📤 翻訳する（iOS翻訳を呼び出し）</button>
+      <button class="secondary-btn" id="copyTranslateBtn">📋 コピーのみ</button>
+      <div class="help-box">
+        <strong>使い方:</strong>
+        <span class="step">① 上の欄に日本語を入力</span>
+        <span class="step">② 「📤 翻訳する」をタップ</span>
+        <span class="step">③ 表示された共有メニューから「翻訳」をタップ</span>
+        <br>
+        <strong>📥 オフライン利用の準備（初回のみ）:</strong>
+        <span class="step">iPhone「設定」→「翻訳」→「ダウンロード済みの言語」</span>
+        <span class="step">→「韓国語」をダウンロード</span>
+        <br>
+        <strong>💡 ヒント:</strong>
+        <span class="step">テキストを長押しして直接「翻訳」を選ぶこともできます</span>
+      </div>
+    </div>
+  `;
+  const input = document.getElementById('translateInput');
+  input.oninput = () => {
+    localStorage.setItem('translateInput', input.value);
+  };
+  document.getElementById('shareTranslateBtn').onclick = async () => {
+    const text = input.value.trim();
+    if (!text) {
+      input.focus();
+      return;
+    }
+    if (navigator.share) {
+      try { await navigator.share({ text }); } catch (e) {}
+    } else {
+      try { await navigator.clipboard.writeText(text); } catch (e) {}
+      alert('共有機能が使えないためクリップボードにコピーしました。「翻訳」アプリを開いて貼り付けてください。');
+    }
+  };
+  document.getElementById('copyTranslateBtn').onclick = async () => {
+    const text = input.value.trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById('copyTranslateBtn');
+      const orig = btn.textContent;
+      btn.textContent = '✓ コピーしました';
+      setTimeout(() => { btn.textContent = orig; }, 1200);
+    } catch (e) {}
+  };
+}
+
 function renderPhrases() {
+  if (currentCategory === TRANSLATE_TAB) {
+    renderTranslateView();
+    updateActionBar();
+    return;
+  }
   phrasesEl.innerHTML = '';
   PHRASES[currentCategory].items.forEach((item, idx) => {
     const btn = document.createElement('button');
