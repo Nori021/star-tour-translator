@@ -1708,6 +1708,99 @@ clearSelectedBtn.onclick = () => {
   updateActionBar();
 };
 
+async function sha1Hex(str) {
+  const buf = new TextEncoder().encode(str);
+  const digest = await crypto.subtle.digest('SHA-1', buf);
+  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+}
+
+function buildCombinedText() {
+  return selected.map(item => {
+    if (item.h) return extractKo(item.ru);
+    return item.ko || '';
+  }).filter(Boolean).join(' ').trim();
+}
+
+async function playSelectedNatural() {
+  // Try to synthesize as one utterance for natural prosody.
+  // Falls back to per-item concatenation if no API key / network failure.
+  const items = [...selected];
+  if (items.length === 0) return;
+  const combined = buildCombinedText();
+  if (!combined) return;
+  const cacheKey = 'combined-' + (await sha1Hex(combined));
+
+  // Highlight all selected items as "playing"
+  document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
+  items.forEach(item => {
+    const k = item.h || item.id;
+    const btn = document.querySelector(`.phrase-btn[data-h="${k}"], .word-card[data-id="${k}"]`);
+    if (btn) btn.classList.add('playing');
+  });
+
+  // Try cache first
+  let blob = await loadAudio(cacheKey);
+  if (!blob) {
+    const key = localStorage.getItem('openaiKey');
+    if (!key) {
+      // No key — fall back to concat playback
+      return playSelectedConcat();
+    }
+    playSelectedBtn.textContent = '🎤 生成中...';
+    try {
+      blob = await generateTTS(combined, key);
+      await saveAudio(cacheKey, blob);
+    } catch (e) {
+      console.warn('Combined TTS failed, falling back to concat:', e);
+      playSelectedBtn.textContent = '▶ 再生';
+      return playSelectedConcat();
+    }
+  }
+
+  if (stopBatchRequested) return;
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  audio.playbackRate = currentSpeed;
+  currentAudio = audio;
+  await new Promise((resolve) => {
+    let resolved = false;
+    const finish = () => {
+      if (resolved) return;
+      resolved = true;
+      URL.revokeObjectURL(url);
+      if (currentAudio === audio) currentAudio = null;
+      resolve();
+    };
+    audio.onended = finish;
+    audio.onerror = finish;
+    audio.play().catch(finish);
+  });
+  document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
+}
+
+async function playSelectedConcat() {
+  // Fallback: play each item sequentially with small gap
+  const allWords = selected.every(s => !s.h && s.id);
+  const gap = allWords ? 20 : 50;
+  for (let i = 0; i < selected.length; i++) {
+    if (stopBatchRequested) break;
+    const item = selected[i];
+    const k = item.h || item.id;
+    const btn = document.querySelector(`.phrase-btn[data-h="${k}"], .word-card[data-id="${k}"]`);
+    if (btn) {
+      document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
+      btn.classList.add('playing');
+      btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    await playItem(item);
+    if (stopBatchRequested) break;
+    if (i < selected.length - 1) {
+      await new Promise(r => setTimeout(r, gap));
+    }
+  }
+  document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
+}
+
 function bindPlaySelected() {
   playSelectedBtn.onclick = async () => {
     if (selected.length === 0 || isPlayingBatch) return;
@@ -1716,29 +1809,15 @@ function bindPlaySelected() {
     playSelectedBtn.textContent = '⏸ 停止';
     const stopHandler = () => { stopBatchRequested = true; stopAllAudio(); };
     playSelectedBtn.onclick = stopHandler;
-    const allWords = selected.every(s => !s.h && s.id);
-    const gap = allWords ? 20 : 50;
-    for (let i = 0; i < selected.length; i++) {
-      if (stopBatchRequested) break;
-      const item = selected[i];
-      const k = item.h || item.id;
-      const btn = document.querySelector(`.phrase-btn[data-h="${k}"], .word-card[data-id="${k}"]`);
-      if (btn) {
-        document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
-        btn.classList.add('playing');
-        btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      await playItem(item);
-      if (stopBatchRequested) break;
-      if (i < selected.length - 1) {
-        await new Promise(r => setTimeout(r, gap));
-      }
+    try {
+      await playSelectedNatural();
+    } finally {
+      document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
+      isPlayingBatch = false;
+      stopBatchRequested = false;
+      playSelectedBtn.textContent = '▶ 再生';
+      bindPlaySelected();
     }
-    document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
-    isPlayingBatch = false;
-    stopBatchRequested = false;
-    playSelectedBtn.textContent = '▶ 再生';
-    bindPlaySelected();
   };
 }
 bindPlaySelected();
