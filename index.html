@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="星空ツアー翻訳">
+<meta name="theme-color" content="#000000">
+<meta name="robots" content="noindex, nofollow">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>星空ツアー翻訳 / 별 투어 번역</title>
+<style>
+/* Night theme (red — preserves dark adaptation, default) */
+:root {
+  --bg: #000;
+  --surface: #1a0606;
+  --border: #4a1010;
+  --text: #ff5a3c;
+  --text-dim: #a83020;
+  --text-faint: #6a1818;
+  --accent: #ff8866;
+  --button-bg: #1a0606;
+  --button-active: #5a1818;
+}
+
+/* Day theme (blue) */
+body.normal-theme {
+  --bg: #0a1420;
+  --surface: #142436;
+  --border: #2a4060;
+  --text: #e8f0ff;
+  --text-dim: #8aa8d0;
+  --text-faint: #4a6080;
+  --accent: #5aa0ff;
+  --button-bg: #142436;
+  --button-active: #2a5090;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Apple SD Gothic Neo", sans-serif;
+  min-height: 100vh;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: env(safe-area-inset-top, 0) 12px 0 12px;
+}
+.title-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0 6px 0;
+}
+h1 {
+  font-size: 15px; margin: 0;
+  color: var(--text-dim); font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.theme-toggle {
+  background: var(--button-bg); color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 6px 12px; border-radius: 16px;
+  font-size: 12px; cursor: pointer;
+  font-family: inherit;
+}
+
+nav {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 6px 0 10px 0;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scroll-snap-type: x proximity;
+}
+nav::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0;
+  background: var(--button-bg); color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 9px 16px; border-radius: 20px;
+  font-size: 14px; cursor: pointer; white-space: nowrap;
+  font-family: inherit;
+  scroll-snap-align: start;
+  transition: background 0.1s, color 0.1s;
+}
+.tab.active {
+  background: var(--button-active);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+main {
+  padding: 12px 12px calc(env(safe-area-inset-bottom, 0) + 32px) 12px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.phrase-btn {
+  background: var(--button-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  font-family: inherit;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: background 0.08s;
+}
+.phrase-btn:active { background: var(--button-active); }
+.phrase-btn .ja {
+  font-size: 17px; line-height: 1.4;
+  color: var(--text);
+}
+.phrase-btn .ko {
+  font-size: 13px; line-height: 1.3;
+  color: var(--text-faint);
+}
+.phrase-btn.has-number {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+}
+.phrase-btn .pose-num {
+  grid-row: span 2;
+  font-size: 32px; font-weight: 700;
+  color: var(--accent);
+  text-align: center;
+  line-height: 1;
+}
+.phrase-btn.has-number .ja,
+.phrase-btn.has-number .ko { grid-column: 2; }
+
+/* Modal */
+#modal {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: none;
+  flex-direction: column;
+  z-index: 100;
+  padding: env(safe-area-inset-top, 0) 16px env(safe-area-inset-bottom, 0) 16px;
+}
+#modal.active { display: flex; }
+.modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.modal-close {
+  background: var(--button-bg); color: var(--text);
+  border: 1px solid var(--border);
+  padding: 9px 16px; border-radius: 10px;
+  font-size: 15px; cursor: pointer;
+  font-family: inherit;
+}
+.modal-speak {
+  background: var(--button-active); color: #fff;
+  border: 1px solid var(--accent);
+  padding: 9px 16px; border-radius: 10px;
+  font-size: 15px; cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+}
+.modal-body {
+  flex: 1;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 20px 4px;
+  gap: 28px;
+  cursor: pointer;
+}
+.modal-pose-num {
+  font-size: 120px; font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: -8px;
+}
+.ja-text {
+  font-size: 17px; color: var(--text-dim);
+  text-align: center; line-height: 1.5;
+}
+.ko-text {
+  font-size: 38px; color: var(--text);
+  font-weight: 600;
+  text-align: center; line-height: 1.4;
+  word-break: keep-all;
+}
+.modal-hint {
+  font-size: 12px; color: var(--text-faint);
+  text-align: center;
+  padding-bottom: 8px;
+}
+
+@media (min-height: 700px) {
+  .ko-text { font-size: 46px; }
+  .modal-pose-num { font-size: 160px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-row">
+    <h1>★ 星空ツアー翻訳</h1>
+    <button class="theme-toggle" id="themeToggle">昼テーマ</button>
+  </div>
+  <nav id="tabs"></nav>
+</header>
+
+<main id="phrases"></main>
+
+<div id="modal">
+  <div class="modal-header">
+    <button class="modal-close" id="modalClose">閉じる</button>
+    <button class="modal-speak" id="modalSpeak">🔊 もう一度</button>
+  </div>
+  <div class="modal-body" id="modalBody">
+    <div class="modal-pose-num" id="modalPoseNum" style="display:none"></div>
+    <div class="ja-text" id="modalJa"></div>
+    <div class="ko-text" id="modalKo"></div>
+    <div class="modal-hint">画面をタップで閉じます</div>
+  </div>
+</div>
+
+<script>
+const PHRASES = [
+  {
+    category: "① 開始",
+    items: [
+      { ja: "こんにちは。本日はよろしくお願いします。", ko: "안녕하세요. 오늘 잘 부탁드립니다." },
+      { ja: "私は岡村です。本日のガイドを担当します。", ko: "저는 오카무라입니다. 오늘 가이드를 맡고 있습니다." },
+      { ja: "申し訳ありません。私は韓国語が話せないので、このアプリで対応します。", ko: "죄송합니다. 저는 한국어를 못해서 이 앱으로 안내해 드리겠습니다." },
+      { ja: "ご質問にはお答えできない場合があります。ご了承ください。", ko: "질문에는 답변드리기 어려울 수 있습니다. 양해 부탁드립니다." },
+      { ja: "本日は星空と一緒にお客様を撮影する『星空撮影』ツアーです。", ko: "오늘은 별이 빛나는 하늘과 함께 손님을 촬영하는 '별 사진 촬영' 투어입니다." },
+      { ja: "帰りは今来た道を通ってお帰りください。", ko: "돌아가실 때는 지금 오신 길로 돌아가 주세요." }
+    ]
+  },
+  {
+    category: "② 移動・注意",
+    items: [
+      { ja: "これから海まで案内します。ついて来てください。", ko: "지금부터 바다까지 안내해 드리겠습니다. 따라와 주세요." },
+      { ja: "道中が少し険しいので、足元にご注意ください。", ko: "가는 길이 조금 험하니 발밑을 조심해 주세요." },
+      { ja: "周りの木々にもご注意ください。", ko: "주변 나무에도 주의해 주세요." },
+      { ja: "自然の生き物がいるので、踏まないように気をつけてください。", ko: "자연 생물이 있으니 밟지 않도록 조심해 주세요." },
+      { ja: "運が良ければヤシガニも見られます。", ko: "운이 좋으면 야자집게(코코넛크랩)도 볼 수 있습니다." },
+      { ja: "ゆっくりで大丈夫ですよ。", ko: "천천히 오셔도 괜찮습니다." }
+    ]
+  },
+  {
+    category: "③ 撮影場所",
+    items: [
+      { ja: "砂浜の岩の上に立ってください。", ko: "모래사장의 바위 위에 서 주세요." },
+      { ja: "砂浜の岩に座ってください。", ko: "모래사장의 바위에 앉아 주세요." },
+      { ja: "もう少し中央に寄ってください。", ko: "조금 더 중앙으로 모여 주세요." },
+      { ja: "1組につき5カットまで撮影します。", ko: "한 팀당 5컷까지 촬영합니다." }
+    ]
+  },
+  {
+    category: "④ ポーズ選択",
+    items: [
+      { ja: "このパネルから1〜7番のポーズを選んでください。", ko: "이 패널에서 1번부터 7번까지 포즈를 골라 주세요." },
+      { ja: "次のポーズに移ります。", ko: "다음 포즈로 넘어가겠습니다." },
+      { ja: "1番のポーズでお願いします。(後ろ姿)", ko: "1번 포즈로 부탁드립니다. (뒷모습)", pose: "1" },
+      { ja: "2番のポーズでお願いします。(向き合い)", ko: "2번 포즈로 부탁드립니다. (마주보기)", pose: "2" },
+      { ja: "3番のポーズでお願いします。(正面・指さし)", ko: "3번 포즈로 부탁드립니다. (정면에서 손가락으로 가리키기)", pose: "3" },
+      { ja: "4番のポーズでお願いします。(後ろ姿・指さし)", ko: "4번 포즈로 부탁드립니다. (뒷모습에서 손가락으로 가리키기)", pose: "4" },
+      { ja: "5番のポーズでお願いします。(空を見上げる)", ko: "5번 포즈로 부탁드립니다. (정면에서 하늘을 바라보기)", pose: "5" },
+      { ja: "6番のポーズでお願いします。(団体・各自違う方向)", ko: "6번 포즈로 부탁드립니다. (단체·각자 다른 방향 보기)", pose: "6" },
+      { ja: "7番のポーズでお願いします。(団体・同じ方向)", ko: "7번 포즈로 부탁드립니다. (단체·같은 방향 보기)", pose: "7" }
+    ]
+  },
+  {
+    category: "⑤ 撮影中",
+    items: [
+      { ja: "「スタート」と言ったら動かないでください。", ko: "'스타트'라고 하면 움직이지 말아 주세요." },
+      { ja: "「OK」と言うまでそのままお願いします。", ko: "'OK'라고 할 때까지 그대로 있어 주세요." },
+      { ja: "動くと写真がブレてしまいます。", ko: "움직이면 사진이 흔들립니다." },
+      { ja: "息を止めなくて大丈夫です。", ko: "숨을 참지 않으셔도 괜찮습니다." },
+      { ja: "星に向かって指をさしてください。", ko: "별을 향해 손가락으로 가리켜 주세요." },
+      { ja: "指が体にかぶらないようにしてください。", ko: "손가락이 몸에 가려지지 않도록 해 주세요." },
+      { ja: "他の人と重ならないようにしてください。", ko: "다른 사람과 겹치지 않도록 해 주세요." },
+      { ja: "ライトをつけます。少し眩しいです。", ko: "조명을 켜겠습니다. 조금 눈부실 수 있습니다." },
+      { ja: "ライトを消します。", ko: "조명을 끄겠습니다." },
+      { ja: "もう一度撮ります。", ko: "한 번 더 찍겠습니다." },
+      { ja: "撮れました!ありがとうございます。", ko: "찍었습니다! 감사합니다." }
+    ]
+  },
+  {
+    category: "⑥ 微調整",
+    items: [
+      { ja: "もう少し右に回ってください。", ko: "조금 더 오른쪽으로 돌아 주세요." },
+      { ja: "もう少し左に回ってください。", ko: "조금 더 왼쪽으로 돌아 주세요." },
+      { ja: "指を右に向けてください。", ko: "손가락을 오른쪽으로 향해 주세요." },
+      { ja: "指を上に向けてください。", ko: "손가락을 위로 향해 주세요." },
+      { ja: "指を左に向けてください。", ko: "손가락을 왼쪽으로 향해 주세요." },
+      { ja: "顎を上げてください。", ko: "턱을 올려 주세요." },
+      { ja: "顎を下げてください。", ko: "턱을 내려 주세요." },
+      { ja: "もう少し近づいてください。", ko: "조금 더 가까이 와 주세요." },
+      { ja: "もう少し離れてください。", ko: "조금 더 떨어져 주세요." },
+      { ja: "カメラの方を見てください。", ko: "카메라 쪽을 봐 주세요." },
+      { ja: "カメラを見ないでください。", ko: "카메라를 보지 마세요." },
+      { ja: "視線を遠くへ向けてください。", ko: "시선을 멀리 향해 주세요." },
+      { ja: "笑顔でお願いします。", ko: "웃어 주세요." },
+      { ja: "自然な表情で大丈夫です。", ko: "자연스러운 표정으로 괜찮습니다." }
+    ]
+  },
+  {
+    category: "⑦ 終了",
+    items: [
+      { ja: "あと1枚で終わりです。", ko: "한 장 남았습니다." },
+      { ja: "最後のカットです。", ko: "마지막 컷입니다." },
+      { ja: "これで撮影は終了です。お疲れ様でした。", ko: "이것으로 촬영을 마치겠습니다. 수고 많으셨습니다." },
+      { ja: "写真は後ほどお送りします。", ko: "사진은 나중에 보내드리겠습니다." },
+      { ja: "本日はありがとうございました。", ko: "오늘 감사했습니다." },
+      { ja: "気をつけてお帰りください。", ko: "조심히 돌아가세요." }
+    ]
+  },
+  {
+    category: "⑧ 緊急",
+    items: [
+      { ja: "動かないでください。危ないです。", ko: "움직이지 마세요. 위험합니다." },
+      { ja: "こちらに来てください。", ko: "이쪽으로 오세요." },
+      { ja: "大丈夫ですか?", ko: "괜찮으세요?" },
+      { ja: "少しお待ちください。", ko: "잠시만 기다려 주세요." }
+    ]
+  }
+];
+
+const tabsEl = document.getElementById('tabs');
+const phrasesEl = document.getElementById('phrases');
+const modal = document.getElementById('modal');
+const modalBody = document.getElementById('modalBody');
+const modalJa = document.getElementById('modalJa');
+const modalKo = document.getElementById('modalKo');
+const modalPoseNum = document.getElementById('modalPoseNum');
+const modalClose = document.getElementById('modalClose');
+const modalSpeak = document.getElementById('modalSpeak');
+const themeToggle = document.getElementById('themeToggle');
+
+let currentCategory = parseInt(localStorage.getItem('lastCategory') || '0', 10);
+if (currentCategory >= PHRASES.length) currentCategory = 0;
+let currentKoText = '';
+
+function renderTabs() {
+  tabsEl.innerHTML = '';
+  PHRASES.forEach((cat, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (i === currentCategory ? ' active' : '');
+    btn.textContent = cat.category;
+    btn.onclick = () => {
+      currentCategory = i;
+      localStorage.setItem('lastCategory', String(i));
+      renderAll();
+      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    };
+    tabsEl.appendChild(btn);
+  });
+  const active = tabsEl.querySelector('.tab.active');
+  if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
+}
+
+function renderPhrases() {
+  phrasesEl.innerHTML = '';
+  PHRASES[currentCategory].items.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'phrase-btn' + (item.pose ? ' has-number' : '');
+    if (item.pose) {
+      const num = document.createElement('div');
+      num.className = 'pose-num';
+      num.textContent = item.pose;
+      btn.appendChild(num);
+    }
+    const ja = document.createElement('div');
+    ja.className = 'ja';
+    ja.textContent = item.ja;
+    btn.appendChild(ja);
+    const ko = document.createElement('div');
+    ko.className = 'ko';
+    ko.textContent = item.ko;
+    btn.appendChild(ko);
+    btn.onclick = () => openModal(item);
+    phrasesEl.appendChild(btn);
+  });
+}
+
+function renderAll() {
+  renderTabs();
+  renderPhrases();
+  window.scrollTo(0, 0);
+}
+
+function speakKorean(text) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ko-KR';
+  u.rate = 0.95;
+  const voices = speechSynthesis.getVoices();
+  const koVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko'));
+  if (koVoice) u.voice = koVoice;
+  speechSynthesis.speak(u);
+}
+
+function openModal(item) {
+  modalJa.textContent = item.ja;
+  modalKo.textContent = item.ko;
+  if (item.pose) {
+    modalPoseNum.textContent = item.pose;
+    modalPoseNum.style.display = 'block';
+  } else {
+    modalPoseNum.style.display = 'none';
+  }
+  currentKoText = item.ko;
+  modal.classList.add('active');
+  setTimeout(() => speakKorean(item.ko), 150);
+}
+
+function closeModal() {
+  modal.classList.remove('active');
+  speechSynthesis.cancel();
+}
+
+modalClose.onclick = closeModal;
+modalBody.onclick = closeModal;
+modalSpeak.onclick = (e) => {
+  e.stopPropagation();
+  speakKorean(currentKoText);
+};
+
+themeToggle.onclick = () => {
+  document.body.classList.toggle('normal-theme');
+  const isNormal = document.body.classList.contains('normal-theme');
+  themeToggle.textContent = isNormal ? '夜テーマ' : '昼テーマ';
+  localStorage.setItem('theme', isNormal ? 'normal' : 'night');
+  document.querySelector('meta[name="theme-color"]')
+    .setAttribute('content', isNormal ? '#0a1420' : '#000000');
+};
+
+if (localStorage.getItem('theme') === 'normal') {
+  document.body.classList.add('normal-theme');
+  themeToggle.textContent = '夜テーマ';
+  document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0a1420');
+}
+
+if ('speechSynthesis' in window) {
+  speechSynthesis.onvoiceschanged = () => {};
+  speechSynthesis.getVoices();
+}
+
+renderAll();
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
