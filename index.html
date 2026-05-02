@@ -213,6 +213,147 @@ body.select-mode .phrase-btn.selected .select-marker {
   display: flex;
 }
 
+/* Word blocks view */
+.words-view { display: flex; flex-direction: column; gap: 12px; padding: 4px 0; }
+.words-toolbar { display: flex; gap: 8px; }
+.words-toolbar .big-btn {
+  flex: 1;
+  background: var(--accent-bg); color: #fff;
+  border: 1px solid var(--accent);
+  padding: 12px; border-radius: 12px;
+  font-size: 15px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.words-toolbar .secondary-btn {
+  background: var(--button-bg); color: var(--text);
+  border: 1px solid var(--border);
+  padding: 12px 14px; border-radius: 12px;
+  font-size: 14px; font-family: inherit; cursor: pointer;
+  white-space: nowrap;
+}
+.words-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.word-card {
+  aspect-ratio: 1;
+  background: var(--button-bg);
+  border: 2px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 8px;
+  display: flex; flex-direction: column;
+  justify-content: center; align-items: center;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  gap: 6px;
+  overflow: hidden;
+  word-break: keep-all;
+}
+.word-card:active { background: var(--selected-bg); }
+.word-card.playing { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
+.word-ja { font-size: 17px; font-weight: 600; color: var(--text); line-height: 1.3; }
+.word-ko { font-size: 17px; line-height: 2; color: var(--text-dim); }
+.word-ko ruby rt { font-size: 10px; color: var(--text-faint); opacity: 0.85; }
+.word-actions {
+  position: absolute;
+  top: 6px; left: 6px; right: 6px;
+  display: flex; justify-content: space-between; gap: 4px;
+}
+.word-action {
+  background: rgba(0,0,0,0.6); color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; padding: 0;
+  font-family: inherit; line-height: 1;
+}
+.word-action.delete { background: #c0392b; border-color: #c0392b; }
+.words-empty {
+  text-align: center; padding: 32px 16px;
+  color: var(--text-dim); font-size: 14px;
+  background: var(--button-bg);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+}
+
+/* Add word modal */
+#addModal {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  align-items: flex-end;
+  z-index: 200;
+}
+#addModal.active { display: flex; }
+.add-modal-inner {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 16px 16px calc(env(safe-area-inset-bottom, 0) + 24px) 16px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.add-modal-inner h3 {
+  margin: 0; font-size: 17px; color: var(--text);
+}
+.add-modal-inner label {
+  font-size: 12px; color: var(--text-dim); margin-bottom: -6px;
+}
+.add-modal-inner input, .add-modal-inner textarea {
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border);
+  padding: 12px; border-radius: 10px;
+  font-size: 16px; font-family: inherit;
+  -webkit-user-select: text; user-select: text;
+}
+.add-modal-inner .preview {
+  background: var(--button-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.add-modal-inner .preview .pv-ja { font-size: 14px; color: var(--text-dim); }
+.add-modal-inner .preview .pv-ko { font-size: 24px; line-height: 2.4; color: var(--text); }
+.add-modal-inner .preview .pv-ko ruby rt { font-size: 12px; color: var(--text-dim); }
+.add-modal-inner .row { display: flex; gap: 8px; }
+.add-modal-inner .row > * { flex: 1; }
+.add-modal-inner button.primary {
+  background: var(--accent-bg); color: #fff;
+  border: 1px solid var(--accent);
+  padding: 12px; border-radius: 10px;
+  font-size: 15px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.add-modal-inner button.primary:disabled { opacity: 0.5; }
+.add-modal-inner button.secondary {
+  background: var(--button-bg); color: var(--text);
+  border: 1px solid var(--border);
+  padding: 12px; border-radius: 10px;
+  font-size: 15px; font-family: inherit; cursor: pointer;
+}
+.add-modal-inner .status {
+  font-size: 13px; color: var(--text-dim);
+  padding: 6px 0;
+}
+.add-modal-inner .status.error { color: #ff6b6b; }
+.add-modal-inner .key-section {
+  background: var(--button-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.add-modal-inner .key-section .label {
+  font-size: 12px; color: var(--text-dim);
+}
+
 /* Free translation view */
 .translate-view {
   display: flex; flex-direction: column;
@@ -424,6 +565,29 @@ body.select-mode .phrase-btn.selected .select-marker {
   </div>
 </div>
 
+<div id="addModal">
+  <div class="add-modal-inner">
+    <h3>単語を追加</h3>
+    <div id="keySection" class="key-section" style="display:none">
+      <div class="label">⚠️ OpenAI APIキーが未設定です（追加にのみ使用、端末内のみに保存）</div>
+      <input type="password" id="keyInput" placeholder="sk-...">
+      <button class="primary" id="saveKeyBtn">キーを保存</button>
+    </div>
+    <label>日本語</label>
+    <input type="text" id="addJaInput" placeholder="例: 海 / 砂浜 / きれいですね" autocomplete="off">
+    <button class="primary" id="translateBtn">翻訳</button>
+    <div id="addStatus" class="status" style="display:none"></div>
+    <div id="addPreview" class="preview" style="display:none">
+      <div class="pv-ja" id="pvJa"></div>
+      <div class="pv-ko" id="pvKo"></div>
+    </div>
+    <div class="row">
+      <button class="secondary" id="addCancelBtn">閉じる</button>
+      <button class="primary" id="addSaveBtn" disabled>追加</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // Each phrase: { ja, ru (ruby string with "korean|katakana" tokens), h (audio hash), pose? }
 const PHRASES = [
@@ -558,7 +722,7 @@ const STORAGE_CAT = 'lastCategory';
 const STORAGE_SPEED = 'speed';
 
 let currentCategory = parseInt(localStorage.getItem(STORAGE_CAT) || '0', 10);
-if (currentCategory > PHRASES.length || currentCategory < 0) currentCategory = 0;
+if (currentCategory > PHRASES.length + 1 || currentCategory < 0) currentCategory = 0;
 
 let currentSpeed = parseFloat(localStorage.getItem(STORAGE_SPEED) || '1.0');
 let selectMode = false;
@@ -639,6 +803,13 @@ function speakKoreanFallback(text, rate) {
 
 // === Render ===
 const TRANSLATE_TAB = PHRASES.length;
+const WORDS_TAB = PHRASES.length + 1;
+let wordBlocks = JSON.parse(localStorage.getItem('wordBlocks') || '[]');
+let editWordsMode = false;
+
+function saveWordBlocks() {
+  localStorage.setItem('wordBlocks', JSON.stringify(wordBlocks));
+}
 
 function renderTabs() {
   tabsEl.innerHTML = '';
@@ -664,12 +835,235 @@ function renderTabs() {
     tBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   };
   tabsEl.appendChild(tBtn);
+  const wBtn = document.createElement('button');
+  wBtn.className = 'tab' + (currentCategory === WORDS_TAB ? ' active' : '');
+  wBtn.textContent = '🧱 単語ブロック';
+  wBtn.onclick = () => {
+    currentCategory = WORDS_TAB;
+    localStorage.setItem(STORAGE_CAT, String(WORDS_TAB));
+    renderAll();
+    wBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  };
+  tabsEl.appendChild(wBtn);
   const active = tabsEl.querySelector('.tab.active');
   if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
 }
 
 function isSelected(item) {
   return selected.some(s => s.h === item.h);
+}
+
+function renderWordsView() {
+  phrasesEl.innerHTML = `
+    <div class="words-view">
+      <div class="words-toolbar">
+        <button class="big-btn" id="addWordBtn">+ 単語を追加</button>
+        <button class="secondary-btn" id="editWordsBtn">${editWordsMode ? '✓ 完了' : '✏️ 編集'}</button>
+      </div>
+      <div class="words-grid" id="wordsGrid"></div>
+    </div>
+  `;
+  renderWordsGrid();
+  document.getElementById('addWordBtn').onclick = openAddWordModal;
+  document.getElementById('editWordsBtn').onclick = () => {
+    editWordsMode = !editWordsMode;
+    renderWordsView();
+  };
+}
+
+function renderWordsGrid() {
+  const grid = document.getElementById('wordsGrid');
+  if (!grid) return;
+  if (wordBlocks.length === 0) {
+    grid.innerHTML = '';
+    const empty = document.createElement('div');
+    empty.className = 'words-empty';
+    empty.textContent = '右上の「+ 単語を追加」から単語を追加してください';
+    empty.style.gridColumn = '1 / -1';
+    grid.appendChild(empty);
+    return;
+  }
+  grid.innerHTML = '';
+  wordBlocks.forEach((w, i) => {
+    const card = document.createElement('div');
+    card.className = 'word-card';
+    card.dataset.i = String(i);
+    card.innerHTML = `
+      <div class="word-ja">${escapeHtml(w.ja)}</div>
+      <div class="word-ko"><ruby>${escapeHtml(w.ko)}<rt>${escapeHtml(w.kana || '')}</rt></ruby></div>
+    `;
+    if (editWordsMode) {
+      const actions = document.createElement('div');
+      actions.className = 'word-actions';
+      actions.innerHTML = `
+        <button class="word-action delete" data-act="del">✕</button>
+        <div style="display:flex;gap:4px">
+          <button class="word-action" data-act="up">↑</button>
+          <button class="word-action" data-act="down">↓</button>
+        </div>
+      `;
+      card.appendChild(actions);
+      actions.querySelectorAll('.word-action').forEach(b => {
+        b.onclick = (e) => {
+          e.stopPropagation();
+          const act = b.dataset.act;
+          if (act === 'up' && i > 0) {
+            [wordBlocks[i-1], wordBlocks[i]] = [wordBlocks[i], wordBlocks[i-1]];
+          } else if (act === 'down' && i < wordBlocks.length - 1) {
+            [wordBlocks[i+1], wordBlocks[i]] = [wordBlocks[i], wordBlocks[i+1]];
+          } else if (act === 'del') {
+            if (confirm(`「${w.ja}」を削除しますか?`)) {
+              wordBlocks.splice(i, 1);
+            } else { return; }
+          } else { return; }
+          saveWordBlocks();
+          renderWordsGrid();
+        };
+      });
+    } else {
+      card.onclick = () => speakWord(w, card);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function speakWord(w, cardEl) {
+  if (!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  document.querySelectorAll('.word-card.playing').forEach(c => c.classList.remove('playing'));
+  if (cardEl) cardEl.classList.add('playing');
+  const u = new SpeechSynthesisUtterance(w.ko);
+  u.lang = 'ko-KR';
+  u.rate = currentSpeed;
+  const voices = speechSynthesis.getVoices();
+  const ko = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko'));
+  if (ko) u.voice = ko;
+  u.onend = () => { if (cardEl) cardEl.classList.remove('playing'); };
+  u.onerror = () => { if (cardEl) cardEl.classList.remove('playing'); };
+  speechSynthesis.speak(u);
+}
+
+// ===== Add word modal =====
+const addModal = document.getElementById('addModal');
+const keySection = document.getElementById('keySection');
+const keyInput = document.getElementById('keyInput');
+const saveKeyBtn = document.getElementById('saveKeyBtn');
+const addJaInput = document.getElementById('addJaInput');
+const translateBtn = document.getElementById('translateBtn');
+const addStatus = document.getElementById('addStatus');
+const addPreview = document.getElementById('addPreview');
+const pvJa = document.getElementById('pvJa');
+const pvKo = document.getElementById('pvKo');
+const addCancelBtn = document.getElementById('addCancelBtn');
+const addSaveBtn = document.getElementById('addSaveBtn');
+
+let pendingTranslation = null;
+
+function openAddWordModal() {
+  pendingTranslation = null;
+  addJaInput.value = '';
+  addPreview.style.display = 'none';
+  addStatus.style.display = 'none';
+  addSaveBtn.disabled = true;
+  const hasKey = !!localStorage.getItem('openaiKey');
+  keySection.style.display = hasKey ? 'none' : 'flex';
+  addModal.classList.add('active');
+  setTimeout(() => addJaInput.focus(), 100);
+}
+
+function closeAddModal() {
+  addModal.classList.remove('active');
+}
+
+addCancelBtn.onclick = closeAddModal;
+addModal.onclick = (e) => {
+  if (e.target === addModal) closeAddModal();
+};
+
+saveKeyBtn.onclick = () => {
+  const k = keyInput.value.trim();
+  if (k.startsWith('sk-')) {
+    localStorage.setItem('openaiKey', k);
+    keySection.style.display = 'none';
+    keyInput.value = '';
+  } else {
+    addStatus.textContent = '無効なキー形式です (sk-で始まる必要があります)';
+    addStatus.className = 'status error';
+    addStatus.style.display = 'block';
+  }
+};
+
+translateBtn.onclick = async () => {
+  const ja = addJaInput.value.trim();
+  if (!ja) { addJaInput.focus(); return; }
+  const key = localStorage.getItem('openaiKey');
+  if (!key) {
+    keySection.style.display = 'flex';
+    keyInput.focus();
+    return;
+  }
+  addStatus.textContent = '翻訳中...';
+  addStatus.className = 'status';
+  addStatus.style.display = 'block';
+  addPreview.style.display = 'none';
+  addSaveBtn.disabled = true;
+  translateBtn.disabled = true;
+  try {
+    const result = await translateJaToKo(ja, key);
+    pendingTranslation = { ja, ko: result.ko, kana: result.kana };
+    pvJa.textContent = ja;
+    pvKo.innerHTML = `<ruby>${escapeHtml(result.ko)}<rt>${escapeHtml(result.kana)}</rt></ruby>`;
+    addPreview.style.display = 'flex';
+    addStatus.style.display = 'none';
+    addSaveBtn.disabled = false;
+  } catch (e) {
+    addStatus.textContent = `翻訳失敗: ${e.message || e}`;
+    addStatus.className = 'status error';
+  } finally {
+    translateBtn.disabled = false;
+  }
+};
+
+addSaveBtn.onclick = () => {
+  if (!pendingTranslation) return;
+  wordBlocks.push({
+    id: Math.random().toString(36).slice(2, 10),
+    ja: pendingTranslation.ja,
+    ko: pendingTranslation.ko,
+    kana: pendingTranslation.kana,
+  });
+  saveWordBlocks();
+  closeAddModal();
+  if (currentCategory === WORDS_TAB) renderWordsGrid();
+};
+
+async function translateJaToKo(ja, apiKey) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You translate Japanese to natural Korean for a tour guide. Output JSON only with the schema {"ko": "<polite Korean translation>", "kana": "<Japanese katakana approximation of the Korean pronunciation>"}. Use 합쇼체 (formal polite) when full sentences. For single nouns just translate them.' },
+        { role: 'user', content: ja },
+      ],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+    }),
+  });
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`HTTP ${res.status}: ${txt.slice(0, 80)}`);
+  }
+  const data = await res.json();
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error('空のレスポンス');
+  const parsed = JSON.parse(content);
+  if (!parsed.ko) throw new Error('koが含まれていません');
+  return { ko: parsed.ko, kana: parsed.kana || '' };
 }
 
 function renderTranslateView() {
@@ -727,6 +1121,11 @@ function renderTranslateView() {
 function renderPhrases() {
   if (currentCategory === TRANSLATE_TAB) {
     renderTranslateView();
+    updateActionBar();
+    return;
+  }
+  if (currentCategory === WORDS_TAB) {
+    renderWordsView();
     updateActionBar();
     return;
   }
