@@ -767,7 +767,7 @@ function bindPlaySelected() {
       await playItem(item);
       if (stopBatchRequested) break;
       if (i < selected.length - 1) {
-        await new Promise(r => setTimeout(r, 150));
+        await new Promise(r => setTimeout(r, 50));
       }
     }
     document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
