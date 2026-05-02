@@ -911,7 +911,12 @@ function renderWordsView() {
           <button class="secondary-btn" id="importWordsBtn">📤 復元する</button>
           <input type="file" id="importFile" accept="application/json" style="display:none">
         </div>
-        <div class="backup-help">バックアップファイルは「ファイル」アプリ・iCloud Drive・メール添付などに保存しておくと安心です。</div>
+        <div class="backup-row">
+          <button class="secondary-btn" id="manageKeyBtn">🔑 APIキー設定</button>
+        </div>
+        <div class="backup-help">
+          バックアップには <strong>単語・音声・APIキー</strong> がすべて含まれます。「ファイル」アプリ・iCloud Drive・メールなどに保存しておけば、データが消えても1回の「📤 復元する」で全て元に戻ります。
+        </div>
       </div>
     </div>
   `;
@@ -927,6 +932,7 @@ function renderWordsView() {
     const f = e.target.files[0];
     if (f) importWords(f);
   };
+  document.getElementById('manageKeyBtn').onclick = openKeyManager;
 }
 
 function blobToBase64(blob) {
@@ -947,8 +953,9 @@ function base64ToBlob(b64, mime = 'audio/mpeg') {
 
 async function exportWords() {
   const words = JSON.parse(localStorage.getItem('wordBlocks') || '[]');
-  if (words.length === 0) {
-    alert('バックアップする単語がありません');
+  const apiKey = localStorage.getItem('openaiKey') || '';
+  if (words.length === 0 && !apiKey) {
+    alert('バックアップする単語もキーもありません');
     return;
   }
   const audioMap = {};
@@ -959,10 +966,11 @@ async function exportWords() {
     }
   }
   const data = {
-    version: 1,
+    version: 2,
     exported: new Date().toISOString(),
     words,
     audio: audioMap,
+    openaiKey: apiKey,
   };
   const json = JSON.stringify(data);
   const blob = new Blob([json], { type: 'application/json' });
@@ -1009,11 +1017,47 @@ async function importWords(file) {
         } catch (e) {}
       }
     }
+    let keyRestored = false;
+    if (data.openaiKey && data.openaiKey.startsWith('sk-')) {
+      if (!localStorage.getItem('openaiKey')) {
+        localStorage.setItem('openaiKey', data.openaiKey);
+        keyRestored = true;
+      }
+    }
     if (currentCategory === WORDS_TAB) renderWordsGrid();
-    alert(`${newWords.length}個の単語を復元しました${audioCount > 0 ? ` (音声${audioCount}個)` : ''}`);
+    const parts = [`${newWords.length}個の単語を復元しました`];
+    if (audioCount > 0) parts.push(`音声${audioCount}個`);
+    if (keyRestored) parts.push('APIキーも復元');
+    alert(parts.join(' / '));
   } catch (e) {
     alert(`復元失敗: ${e.message || e}`);
   }
+}
+
+function openKeyManager() {
+  const current = localStorage.getItem('openaiKey') || '';
+  const masked = current ? current.slice(0, 8) + '...' + current.slice(-4) : '(未設定)';
+  const action = prompt(
+    `現在のAPIキー: ${masked}\n\n` +
+    `新しいキーを入力すると上書きされます。\n` +
+    `空欄でOKを押すと現在のキーを削除します。`,
+    ''
+  );
+  if (action === null) return;
+  const trimmed = action.trim();
+  if (trimmed === '') {
+    if (confirm('APIキーを削除しますか?')) {
+      localStorage.removeItem('openaiKey');
+      alert('APIキーを削除しました');
+    }
+    return;
+  }
+  if (!trimmed.startsWith('sk-')) {
+    alert('無効なキー形式です (sk-で始まる必要があります)');
+    return;
+  }
+  localStorage.setItem('openaiKey', trimmed);
+  alert('APIキーを保存しました');
 }
 
 function renderWordsGrid() {
