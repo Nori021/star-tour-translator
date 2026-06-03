@@ -1,4 +1,4 @@
-const CACHE = 'star-tour-translator-v3';
+const CACHE = 'star-tour-translator-v4';
 const ASSETS = [
   './',
   './index.html',
