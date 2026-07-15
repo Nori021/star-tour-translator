@@ -3,3 +3,9 @@
 audio-samples/
 sample-compare.html
 audio-map.txt
+
+# Original full-size pose photos (deploy only the optimized poses/w/ copies)
+poses/*.jpg
+poses/*.JPG
+poses/*.jpeg
+poses/*.JPEG

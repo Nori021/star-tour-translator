@@ -849,10 +849,14 @@ const CONSTELLATIONS = [
 
 // === ポージング (写真は poses/ フォルダに追加) ===
 const POSES = [
-  { key: "solo",   ja: "単身",       ko: "혼자",  emoji: "🧍", poses: [] },
-  { key: "couple", ja: "カップル",   ko: "커플",  emoji: "💑", poses: [] },
-  { key: "family", ja: "ファミリー", ko: "가족",  emoji: "👨‍👩‍👧", poses: [] },
-  { key: "group",  ja: "団体",       ko: "단체",  emoji: "👥", poses: [] }
+  { key: "solo",   ja: "単身",       ko: "혼자",  emoji: "🧍",
+    poses: ["poses/w/solo-1.jpg", "poses/w/solo-2.jpg", "poses/w/solo-3.jpg", "poses/w/solo-4.jpg", "poses/w/solo-5.jpg", "poses/w/solo-6.jpg", "poses/w/solo-7.jpg", "poses/w/solo-8.jpg", "poses/w/solo-9.jpg", "poses/w/solo-10.jpg", "poses/w/solo-11.jpg", "poses/w/solo-12.jpg", "poses/w/solo-13.jpg", "poses/w/solo-14.jpg", "poses/w/solo-15.jpg"] },
+  { key: "couple", ja: "カップル",   ko: "커플",  emoji: "💑",
+    poses: ["poses/w/couple-1.jpg", "poses/w/couple-2.jpg", "poses/w/couple-3.jpg", "poses/w/couple-4.jpg", "poses/w/couple-5.jpg", "poses/w/couple-6.jpg", "poses/w/couple-7.jpg", "poses/w/couple-8.jpg", "poses/w/couple-9.jpg", "poses/w/couple-10.jpg", "poses/w/couple-11.jpg", "poses/w/couple-12.jpg", "poses/w/couple-13.jpg"] },
+  { key: "family", ja: "ファミリー", ko: "가족",  emoji: "👨‍👩‍👧",
+    poses: ["poses/w/family-1.jpg", "poses/w/family-2.jpg", "poses/w/family-3.jpg", "poses/w/family-4.jpg", "poses/w/family-5.jpg", "poses/w/family-6.jpg"] },
+  { key: "group",  ja: "団体",       ko: "단체",  emoji: "👥",
+    poses: ["poses/w/group-1.jpg", "poses/w/group-2.jpg", "poses/w/group-3.jpg", "poses/w/group-4.jpg"] }
 ];
 
 // === Utilities ===
@@ -935,7 +939,7 @@ async function playItem(item, opts = {}) {
   let audioUrl = null;
   let revokeUrl = null;
   if (item.h) {
-    audioUrl = `audio/${item.h}.m4a`;
+    audioUrl = `audio/${item.h}.mp3`;
   } else if (item.id) {
     const blob = await loadAudio(item.id);
     if (blob) {
@@ -1893,7 +1897,7 @@ async function loadAudioBuffer(item, ctx) {
   let arrayBuffer = null;
   if (item.h) {
     try {
-      const res = await fetch(`audio/${item.h}.m4a`);
+      const res = await fetch(`audio/${item.h}.mp3`);
       if (!res.ok) return null;
       arrayBuffer = await res.arrayBuffer();
     } catch { return null; }
