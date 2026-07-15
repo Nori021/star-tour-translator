@@ -625,24 +625,30 @@ body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity
 .section-hint .sh-ko { font-size: 16px; color: var(--text); font-weight: 600; }
 .section-hint .sh-ja { font-size: 12px; color: var(--text-faint); }
 
-/* === Manual view === */
-.manual-view { display: flex; flex-direction: column; gap: 16px; }
-.manual-section {
-  display: flex; flex-direction: column; gap: 8px;
+/* === Guide (single-sheet ご案内) === */
+.guide-sheet {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 12px;
+  padding: 4px 12px 14px 12px;
+  display: flex; flex-direction: column;
 }
-.manual-section-header {
+.guide-title-row {
   display: flex; align-items: center; gap: 10px;
-  padding: 2px 2px 10px 2px;
-  border-bottom: 1px solid var(--border);
+  padding: 12px 2px 12px 2px;
 }
-.ms-icon { font-size: 22px; flex-shrink: 0; }
-.ms-title { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.ms-ko { font-size: 16px; font-weight: 700; color: var(--text); }
-.ms-ja { font-size: 11px; color: var(--text-faint); }
+.guide-title { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.gt-ja { font-size: 19px; font-weight: 700; color: var(--text); }
+.gt-ko { font-size: 13px; color: var(--text-dim); }
+.guide-section-head {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin: 6px 2px 2px 2px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.guide-section-head .gs-icon { font-size: 18px; }
+.gs-ko { font-size: 15px; font-weight: 700; color: var(--accent); }
+.gs-ja { font-size: 12px; color: var(--text-faint); }
 .ms-playall {
   background: var(--accent-bg); color: #fff;
   border: 1px solid var(--accent);
@@ -650,6 +656,14 @@ body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity
   font-size: 13px; font-weight: 600; cursor: pointer;
   font-family: inherit; white-space: nowrap; flex-shrink: 0;
 }
+/* Flat phrase rows inside the guide sheet */
+.phrase-btn.flat {
+  border: none; background: transparent;
+  border-radius: 10px;
+  padding: 8px 6px; gap: 6px;
+}
+.phrase-btn.flat:active { background: var(--selected-bg); }
+.phrase-btn.flat .ja { font-size: 15px; }
 
 /* === Pose view === */
 .pose-grid {
@@ -993,7 +1007,7 @@ function renderNav() {
   // --- main tabs ---
   mainTabsEl.innerHTML = '';
   const MAIN = [
-    { k: 'manual', label: '📖 マニュアル' },
+    { k: 'manual', label: '📖 ご案内' },
     { k: 'posing', label: '📸 ポージング' },
     { k: 'translate', label: '🗣 翻訳' },
   ];
@@ -1038,7 +1052,7 @@ function renderNav() {
 // Build a phrase button (used by manual / phrases / constellations)
 function makePhraseButton(item, opts = {}) {
   const btn = document.createElement('button');
-  btn.className = 'phrase-btn' + (isSelected(item) ? ' selected' : '');
+  btn.className = 'phrase-btn' + (opts.flat ? ' flat' : '') + (isSelected(item) ? ' selected' : '');
   btn.dataset.h = item.h || '';
   const ja = document.createElement('div');
   ja.className = 'ja';
@@ -1069,26 +1083,36 @@ async function playInline(item, btn) {
 
 function renderManual() {
   phrasesEl.innerHTML = '';
-  const wrap = document.createElement('div');
-  wrap.className = 'manual-view';
+  const sheet = document.createElement('div');
+  sheet.className = 'guide-sheet';
+
+  // Title + play-all (whole guide)
+  const titleRow = document.createElement('div');
+  titleRow.className = 'guide-title-row';
+  titleRow.innerHTML =
+    `<div class="guide-title"><span class="gt-ja">🌟 星空撮影のご案内</span>` +
+    `<span class="gt-ko">별 사진 촬영 안내</span></div>`;
+  const playAll = document.createElement('button');
+  playAll.className = 'ms-playall';
+  playAll.textContent = '▶ 通し';
+  const allItems = MANUAL.reduce((acc, s) => acc.concat(s.items), []);
+  playAll.onclick = (e) => { e.stopPropagation(); playSection(allItems, playAll); };
+  titleRow.appendChild(playAll);
+  sheet.appendChild(titleRow);
+
+  // Sections flow within one sheet (headings + tappable sentences)
   MANUAL.forEach(sec => {
-    const card = document.createElement('div');
-    card.className = 'manual-section';
     const head = document.createElement('div');
-    head.className = 'manual-section-header';
+    head.className = 'guide-section-head';
     head.innerHTML =
-      `<span class="ms-icon">${sec.icon}</span>` +
-      `<span class="ms-title"><span class="ms-ko">${escapeHtml(sec.ko)}</span><span class="ms-ja">${escapeHtml(sec.ja)}</span></span>`;
-    const playAll = document.createElement('button');
-    playAll.className = 'ms-playall';
-    playAll.textContent = '▶ 通し';
-    playAll.onclick = (e) => { e.stopPropagation(); playSection(sec.items, playAll); };
-    head.appendChild(playAll);
-    card.appendChild(head);
-    sec.items.forEach(item => card.appendChild(makePhraseButton(item, { inline: true })));
-    wrap.appendChild(card);
+      `<span class="gs-icon">${sec.icon}</span>` +
+      `<span class="gs-ko">${escapeHtml(sec.ko)}</span>` +
+      `<span class="gs-ja">${escapeHtml(sec.ja)}</span>`;
+    sheet.appendChild(head);
+    sec.items.forEach(item => sheet.appendChild(makePhraseButton(item, { inline: true, flat: true })));
   });
-  phrasesEl.appendChild(wrap);
+
+  phrasesEl.appendChild(sheet);
 }
 
 function renderPosing() {

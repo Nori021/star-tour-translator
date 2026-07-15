@@ -1,4 +1,4 @@
-const CACHE = 'star-tour-translator-v5';
+const CACHE = 'star-tour-translator-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -42,16 +42,16 @@ self.addEventListener('fetch', e => {
     );
     return;
   }
-  // For other files: cache-first with network fallback
+  // For app files (html/js/manifest/icons): network-first, fall back to cache offline.
+  // This guarantees the latest HTML/JS is served when online, so code changes never
+  // get stuck behind the cache (no version bump needed for content updates).
   e.respondWith(
-    caches.match(e.request).then(cached =>
-      cached || fetch(e.request).then(res => {
-        if (res.ok) {
-          const copy = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
-        }
-        return res;
-      }).catch(() => cached)
-    )
+    fetch(e.request).then(res => {
+      if (res.ok) {
+        const copy = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+      }
+      return res;
+    }).catch(() => caches.match(e.request))
   );
 });
