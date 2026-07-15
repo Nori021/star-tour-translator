@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="星空ツアー翻訳">
+<meta name="apple-mobile-web-app-title" content="星空フォトガイド">
 <meta name="theme-color" content="#000000">
 <meta name="robots" content="noindex, nofollow">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>星空ツアー翻訳 / 별 투어 번역</title>
+<title>星空フォト ガイド / 별 사진 가이드</title>
 <style>
 :root {
   --bg: #0a1420;
@@ -587,24 +587,128 @@ body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
 }
+
+/* === Main tabs (top level) === */
+.main-tabs {
+  display: flex; gap: 6px;
+  padding: 2px 0 8px 0;
+  overflow: visible;
+}
+.main-tab {
+  flex: 1;
+  background: var(--button-bg); color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 11px 4px; border-radius: 14px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  font-family: inherit; white-space: nowrap; text-align: center;
+  transition: background 0.1s, color 0.1s;
+}
+.main-tab.active {
+  background: var(--accent-bg); color: #fff; border-color: var(--accent);
+}
+.sub-tabs {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 2px 0 10px 0;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.sub-tabs::-webkit-scrollbar { display: none; }
+
+/* Section hint banner */
+.section-hint {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 14px; margin-bottom: 2px;
+  background: var(--button-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-dim);
+}
+.section-hint .sh-ko { font-size: 16px; color: var(--text); font-weight: 600; }
+.section-hint .sh-ja { font-size: 12px; color: var(--text-faint); }
+
+/* === Manual view === */
+.manual-view { display: flex; flex-direction: column; gap: 16px; }
+.manual-section {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px;
+}
+.manual-section-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 2px 2px 10px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.ms-icon { font-size: 22px; flex-shrink: 0; }
+.ms-title { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.ms-ko { font-size: 16px; font-weight: 700; color: var(--text); }
+.ms-ja { font-size: 11px; color: var(--text-faint); }
+.ms-playall {
+  background: var(--accent-bg); color: #fff;
+  border: 1px solid var(--accent);
+  padding: 8px 13px; border-radius: 12px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  font-family: inherit; white-space: nowrap; flex-shrink: 0;
+}
+
+/* === Pose view === */
+.pose-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.pose-card {
+  position: relative;
+  aspect-ratio: 3/4;
+  background: var(--button-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.pose-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pose-card.placeholder { border-style: dashed; }
+.pose-badge {
+  position: absolute; top: 8px; left: 8px;
+  background: rgba(0,0,0,0.55); color: #fff;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; line-height: 1;
+}
+.pose-ph {
+  color: var(--text-faint); font-size: 12px; text-align: center;
+  display: flex; flex-direction: column; gap: 4px; align-items: center;
+}
+.pose-ph .pph-num { font-size: 26px; font-weight: 700; color: var(--text-dim); }
+.pose-note {
+  margin-top: 12px; padding: 12px;
+  background: var(--button-bg); border: 1px dashed var(--border);
+  border-radius: 12px; color: var(--text-dim); font-size: 12px; line-height: 1.6;
+}
+
+/* Modal image (pose fullscreen) */
+#modalImg {
+  max-width: 100%; max-height: 72vh;
+  border-radius: 12px; object-fit: contain;
+}
 </style>
 </head>
 <body>
 
 <header>
   <div class="row1">
-    <h1>★ 星空ツアー翻訳</h1>
+    <h1>★ 星空フォト ガイド</h1>
     <button class="icon-btn" id="selectToggle" aria-label="選択モード">☑ 選択</button>
     <button class="icon-btn" id="themeToggle" aria-label="テーマ">☀</button>
   </div>
-  <div class="speed-row">
+  <nav id="mainTabs" class="main-tabs"></nav>
+  <nav id="subTabs" class="sub-tabs" style="display:none"></nav>
+  <div class="speed-row" id="speedRow">
     <span class="label">再生速度:</span>
     <button class="speed-btn" data-speed="0.7">0.7x</button>
     <button class="speed-btn active" data-speed="1.0">1.0x</button>
     <button class="speed-btn" data-speed="1.2">1.2x</button>
     <button class="speed-btn" data-speed="1.5">1.5x</button>
   </div>
-  <nav id="tabs"></nav>
 </header>
 
 <main id="phrases"></main>
@@ -622,6 +726,7 @@ body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity
   </div>
   <div class="modal-body" id="modalBody">
     <div class="modal-pose-num" id="modalPoseNum" style="display:none"></div>
+    <img id="modalImg" style="display:none" alt="">
     <div class="ja-text" id="modalJa"></div>
     <div class="ko-text" id="modalKo"></div>
     <div class="modal-hint">画面をタップで閉じます</div>
@@ -675,6 +780,67 @@ const PHRASES = [
   }
 ];
 
+// === Manual (お客様向け・韓国語メイン) ===
+const MANUAL = [
+  {
+    icon: "👋", ko: "인사 · 촬영 매수", ja: "ご挨拶・撮影枚数",
+    items: [
+      { ja: "はじめまして。本日の星空フォトを担当します、岡村です。", ru: "안녕하세요.|アンニョンハセヨ 오늘|オヌル 별|ピョル 사진|サジン 촬영을|チャリョンウル 담당하는|タムダンハヌン 오카무라입니다.|オカムライムニダ", h: "26f595a484" },
+      { ja: "撮影の枚数は人数によって変わります。大人2名で5枚、大人が1名増えるごとに1枚ずつ増えます。", ru: "촬영|チャリョン 매수는|メスヌン 인원수에|イヌォンスエ 따라|ッタラ 달라집니다.|タルラジムニダ 어른|オルン 두|トゥ 분이면|ブニミョン 다섯|タソッ 장이고,|チャンイゴ 어른이|オルニ 한|ハン 분|ブン 늘|ヌル 때마다|ッテマダ 한|ハン 장씩|チャンシク 늘어납니다.|ヌロナムニダ", h: "380cdd9f4f" }
+    ]
+  },
+  {
+    icon: "📸", ko: "촬영 방법", ja: "撮影方法（動かないでください）",
+    items: [
+      { ja: "星空フォトは動くとブレてしまうので、約6秒間止まっていただく必要があります。", ru: "별|ピョル 사진은|サジヌン 움직이면|ウムジギミョン 흔들리기|フンドゥルリギ 때문에,|ッテムネ 약|ヤク 6초간|ユクチョガン 멈춰|モムチョ 주셔야|ジュショヤ 합니다.|ハムニダ", h: "239d398f2e" },
+      { ja: "「レディー、スタート」と言ったら止まってください。「OK」と言うまでそのままお願いします。", ru: "'레디,|レディ 스타트'라고|スタトゥラゴ 하면|ハミョン 멈춰|モムチョ 주세요.|ジュセヨ 'OK'라고|オーケーラゴ 할|ハル 때까지|ッテッカジ 그대로|クデロ 계셔|ケショ 주세요.|ジュセヨ", h: "d107579ea4" }
+    ]
+  },
+  {
+    icon: "🎯", ko: "초점 · 밝기", ja: "ピント・明るさ",
+    items: [
+      { ja: "カメラの設定上、空と人物の両方にピントを合わせることはできません。基本的に空にピントを合わせます。", ru: "카메라|カメラ 설정상,|ソルチョンサン 하늘과|ハヌルグァ 인물|インムル 둘|トゥル 다에|ダエ 초점을|チョジョムル 맞출|マッチュル 수는|スヌン 없습니다.|オプスムニダ 기본적으로|キボンジョグロ 하늘에|ハヌレ 초점을|チョジョムル 맞춥니다.|マッチュムニダ", h: "265e8521d4" },
+      { ja: "普段は人物を少し暗めに撮影します。明るくしたい場合はお申し付けください。", ru: "평소에는|ピョンソエヌン 인물을|インムルル 조금|チョグム 어둡게|オドゥプケ 촬영합니다.|チャリョンハムニダ 밝게|パルケ 하고|ハゴ 싶으시면|シプスシミョン 말씀해|マルスメ 주세요.|ジュセヨ", h: "27488adfc8" }
+    ]
+  },
+  {
+    icon: "💬", ko: "의사소통", ja: "コミュニケーション",
+    items: [
+      { ja: "私は韓国語が話せないので、翻訳アプリを使ってやり取りさせていただきます。", ru: "저는|チョヌン 한국어를|ハングゴルル 못해서,|モッテソ 번역|ポニョク 앱을|エブル 사용해|サヨンヘ 대화하겠습니다.|テファハゲッスムニダ", h: "04e9223b47" }
+    ]
+  },
+  {
+    icon: "☁️", ko: "날씨 안내", ja: "天候について",
+    items: [
+      { ja: "星空フォトは天候との勝負です。雲がかかると、お時間をいただく場合があります。", ru: "별|ピョル 사진은|サジヌン 날씨와의|ナルシワエ 싸움입니다.|ッサウミムニダ 구름이|クルミ 끼면|ッキミョン 시간이|シガニ 걸릴|コルリル 수|ス 있습니다.|イッスムニダ", h: "713d16598d" },
+      { ja: "天候が悪い場合は、中止となることもございます。あらかじめご了承ください。", ru: "날씨가|ナルシガ 좋지|チョッチ 않은|アヌン 경우에는|キョンウエヌン 촬영이|チャリョンイ 취소될|チュィソドェル 수도|スド 있습니다.|イッスムニダ 미리|ミリ 양해|ヤンヘ 부탁드립니다.|プタッドゥリムニダ", h: "a1c103ba59" }
+    ]
+  },
+  {
+    icon: "🐛", ko: "장소 · 벌레", ja: "場所・虫よけ",
+    items: [
+      { ja: "ここは明かりが全くなく自然が豊かな場所なので、星がとてもきれいに見えます。", ru: "이곳은|イゴスン 빛이|ピチ 전혀|チョニョ 없고|オプコ 자연이|チャヨニ 풍부한|プンブハン 곳이라,|ゴシラ 별이|ピョリ 아주|アジュ 아름답게|アルムダプケ 보입니다.|ポイムニダ", h: "66ab8f71ae" },
+      { ja: "その分、虫が出ます。虫よけスプレーをご用意していますので、ご自由にお使いください。", ru: "그만큼|クマンクム 벌레가|ポルレガ 나옵니다.|ナオムニダ 벌레|ポルレ 기피제를|キピジェルル 준비해|チュンビヘ 두었으니,|ドゥオッスニ 자유롭게|チャユロプケ 사용해|サヨンヘ 주세요.|ジュセヨ", h: "2c1c5ae041" }
+    ]
+  }
+];
+
+// === 星座の説明 (お客様に見せながら説明) ===
+const CONSTELLATIONS = [
+  { ja: "あれが天の川です。たくさんの星が集まって、川のように見えます。", ru: "저것이|チョゴシ 은하수입니다.|ウナスイムニダ 수많은|スマヌン 별이|ピョリ 모여|モヨ 강처럼|カンチョロム 보입니다.|ポイムニダ", h: "dd10a8329f" },
+  { ja: "あれが北斗七星です。7つの星がひしゃくの形に並んでいます。", ru: "저것이|チョゴシ 북두칠성입니다.|プクトゥチルソンイムニダ 일곱|イルゴプ 개의|ケエ 별이|ピョリ 국자|ククチャ 모양으로|モヤンウロ 늘어서|ヌロソ 있습니다.|イッスムニダ", h: "dddcbba3f2" },
+  { ja: "あれが北極星です。いつも北にあって、動かない星です。", ru: "저것이|チョゴシ 북극성입니다.|プッククソンイムニダ 항상|ハンサン 북쪽에|プクッチョゲ 있고,|イッコ 움직이지|ウムジギジ 않는|アンヌン 별입니다.|ピョリムニダ", h: "74b8a3c36c" },
+  { ja: "あれが彦星と織姫です。七夕の伝説で、1年に1度だけ会える星です。", ru: "저것이|チョゴシ 견우와|キョヌワ 직녀입니다.|チンニョイムニダ 칠석|チルソク 전설|チョンソル 속,|ソク 1년에|イルリョネ 한|ハン 번만|ボンマン 만날|マンナル 수|ス 있는|インヌン 별입니다.|ピョリムニダ", h: "0e08df086b" }
+];
+
+// === ポージング (写真は poses/ フォルダに追加) ===
+const POSES = [
+  { key: "solo",   ja: "単身",       ko: "혼자",  emoji: "🧍", poses: [] },
+  { key: "couple", ja: "カップル",   ko: "커플",  emoji: "💑", poses: [] },
+  { key: "family", ja: "ファミリー", ko: "가족",  emoji: "👨‍👩‍👧", poses: [] },
+  { key: "group",  ja: "団体",       ko: "단체",  emoji: "👥", poses: [] }
+];
+
 // === Utilities ===
 function escapeHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -700,11 +866,17 @@ function extractKo(ru) {
 
 // === State ===
 const STORAGE_THEME = 'theme';
-const STORAGE_CAT = 'lastCategory';
 const STORAGE_SPEED = 'speed';
 
-let currentCategory = parseInt(localStorage.getItem(STORAGE_CAT) || '0', 10);
-if (currentCategory > PHRASES.length + 1 || currentCategory < 0) currentCategory = 0;
+// view: 'manual' | 'posing' | 'translate'
+let view = localStorage.getItem('view') || 'manual';
+if (!['manual', 'posing', 'translate'].includes(view)) view = 'manual';
+let posingCat = 0;
+// transCat: 0,1 = PHRASES categories, 2 = 星座, 3 = 単語ブロック
+let transCat = parseInt(localStorage.getItem('transCat') || '0', 10);
+if (transCat < 0 || transCat > 3) transCat = 0;
+function saveTrans() { localStorage.setItem('transCat', String(transCat)); }
+function isWordsActive() { return view === 'translate' && transCat === 3; }
 
 let currentSpeed = parseFloat(localStorage.getItem(STORAGE_SPEED) || '1.0');
 let selectMode = false;
@@ -714,12 +886,15 @@ let stopBatchRequested = false;
 let currentAudio = null;
 
 // === Elements ===
-const tabsEl = document.getElementById('tabs');
+const mainTabsEl = document.getElementById('mainTabs');
+const subTabsEl = document.getElementById('subTabs');
+const speedRow = document.getElementById('speedRow');
 const phrasesEl = document.getElementById('phrases');
 const modal = document.getElementById('modal');
 const modalBody = document.getElementById('modalBody');
 const modalJa = document.getElementById('modalJa');
 const modalKo = document.getElementById('modalKo');
+const modalImg = document.getElementById('modalImg');
 const modalPoseNum = document.getElementById('modalPoseNum');
 const modalClose = document.getElementById('modalClose');
 const modalSpeak = document.getElementById('modalSpeak');
@@ -800,8 +975,6 @@ function speakKoreanFallback(text, rate) {
 }
 
 // === Render ===
-const TRANSLATE_TAB = PHRASES.length;
-const WORDS_TAB = PHRASES.length + 1;
 let wordBlocks = JSON.parse(localStorage.getItem('wordBlocks') || '[]');
 let editWordsMode = false;
 
@@ -809,42 +982,172 @@ function saveWordBlocks() {
   localStorage.setItem('wordBlocks', JSON.stringify(wordBlocks));
 }
 
-function renderTabs() {
-  tabsEl.innerHTML = '';
-  PHRASES.forEach((cat, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'tab' + (i === currentCategory ? ' active' : '');
-    btn.textContent = cat.c;
-    btn.onclick = () => {
-      currentCategory = i;
-      localStorage.setItem(STORAGE_CAT, String(i));
-      renderAll();
-      btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    };
-    tabsEl.appendChild(btn);
+function setView(k) {
+  view = k;
+  localStorage.setItem('view', k);
+  if (k !== 'translate' && selectMode) setSelectMode(false);
+  renderAll();
+}
+
+function renderNav() {
+  // --- main tabs ---
+  mainTabsEl.innerHTML = '';
+  const MAIN = [
+    { k: 'manual', label: '📖 マニュアル' },
+    { k: 'posing', label: '📸 ポージング' },
+    { k: 'translate', label: '🗣 翻訳' },
+  ];
+  MAIN.forEach(m => {
+    const b = document.createElement('button');
+    b.className = 'main-tab' + (view === m.k ? ' active' : '');
+    b.textContent = m.label;
+    b.onclick = () => setView(m.k);
+    mainTabsEl.appendChild(b);
   });
-  const tBtn = document.createElement('button');
-  tBtn.className = 'tab' + (currentCategory === TRANSLATE_TAB ? ' active' : '');
-  tBtn.textContent = '🌐 自由翻訳';
-  tBtn.onclick = () => {
-    currentCategory = TRANSLATE_TAB;
-    localStorage.setItem(STORAGE_CAT, String(TRANSLATE_TAB));
-    renderAll();
-    tBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  // --- sub tabs ---
+  subTabsEl.innerHTML = '';
+  let subs = [];
+  if (view === 'posing') {
+    subs = POSES.map((p, i) => ({
+      label: `${p.emoji} ${p.ja}`, active: posingCat === i,
+      on: () => { posingCat = i; renderAll(); },
+    }));
+  } else if (view === 'translate') {
+    subs = [
+      { label: PHRASES[0].c, active: transCat === 0, on: () => { transCat = 0; saveTrans(); renderAll(); } },
+      { label: PHRASES[1].c, active: transCat === 1, on: () => { transCat = 1; saveTrans(); renderAll(); } },
+      { label: '⭐ 星座', active: transCat === 2, on: () => { transCat = 2; saveTrans(); renderAll(); } },
+      { label: '🧱 単語', active: transCat === 3, on: () => { transCat = 3; saveTrans(); renderAll(); } },
+    ];
+  }
+  subTabsEl.style.display = subs.length ? 'flex' : 'none';
+  subs.forEach(s => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (s.active ? ' active' : '');
+    b.textContent = s.label;
+    b.onclick = () => { s.on(); b.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); };
+    subTabsEl.appendChild(b);
+  });
+  const activeSub = subTabsEl.querySelector('.tab.active');
+  if (activeSub) activeSub.scrollIntoView({ inline: 'center', block: 'nearest' });
+  // --- contextual controls ---
+  selectToggle.style.display = view === 'translate' ? '' : 'none';
+  speedRow.style.display = view === 'posing' ? 'none' : 'flex';
+}
+
+// Build a phrase button (used by manual / phrases / constellations)
+function makePhraseButton(item, opts = {}) {
+  const btn = document.createElement('button');
+  btn.className = 'phrase-btn' + (isSelected(item) ? ' selected' : '');
+  btn.dataset.h = item.h || '';
+  const ja = document.createElement('div');
+  ja.className = 'ja';
+  ja.textContent = item.ja;
+  btn.appendChild(ja);
+  const koRuby = document.createElement('div');
+  koRuby.className = 'ko-ruby';
+  koRuby.innerHTML = renderRuby(item.ru);
+  btn.appendChild(koRuby);
+  const marker = document.createElement('div');
+  marker.className = 'select-marker';
+  marker.textContent = '✓';
+  btn.appendChild(marker);
+  btn.onclick = () => {
+    if (selectMode) { toggleSelect(item, btn); return; }
+    if (opts.inline) playInline(item, btn);
+    else openModal(item);
   };
-  tabsEl.appendChild(tBtn);
-  const wBtn = document.createElement('button');
-  wBtn.className = 'tab' + (currentCategory === WORDS_TAB ? ' active' : '');
-  wBtn.textContent = '🧱 単語ブロック';
-  wBtn.onclick = () => {
-    currentCategory = WORDS_TAB;
-    localStorage.setItem(STORAGE_CAT, String(WORDS_TAB));
-    renderAll();
-    wBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
-  tabsEl.appendChild(wBtn);
-  const active = tabsEl.querySelector('.tab.active');
-  if (active) active.scrollIntoView({ inline: 'center', block: 'nearest' });
+  return btn;
+}
+
+async function playInline(item, btn) {
+  document.querySelectorAll('.phrase-btn.playing').forEach(b => b.classList.remove('playing'));
+  btn.classList.add('playing');
+  try { await playItem(item); } catch {}
+  btn.classList.remove('playing');
+}
+
+function renderManual() {
+  phrasesEl.innerHTML = '';
+  const wrap = document.createElement('div');
+  wrap.className = 'manual-view';
+  MANUAL.forEach(sec => {
+    const card = document.createElement('div');
+    card.className = 'manual-section';
+    const head = document.createElement('div');
+    head.className = 'manual-section-header';
+    head.innerHTML =
+      `<span class="ms-icon">${sec.icon}</span>` +
+      `<span class="ms-title"><span class="ms-ko">${escapeHtml(sec.ko)}</span><span class="ms-ja">${escapeHtml(sec.ja)}</span></span>`;
+    const playAll = document.createElement('button');
+    playAll.className = 'ms-playall';
+    playAll.textContent = '▶ 通し';
+    playAll.onclick = (e) => { e.stopPropagation(); playSection(sec.items, playAll); };
+    head.appendChild(playAll);
+    card.appendChild(head);
+    sec.items.forEach(item => card.appendChild(makePhraseButton(item, { inline: true })));
+    wrap.appendChild(card);
+  });
+  phrasesEl.appendChild(wrap);
+}
+
+function renderPosing() {
+  phrasesEl.innerHTML = '';
+  const cat = POSES[posingCat];
+  const hint = document.createElement('div');
+  hint.className = 'section-hint';
+  hint.innerHTML = `<span class="sh-ko">마음에 드는 포즈를 골라 주세요</span><span class="sh-ja">好きなポーズをお選びください</span>`;
+  phrasesEl.appendChild(hint);
+  const grid = document.createElement('div');
+  grid.className = 'pose-grid';
+  const list = cat.poses || [];
+  const count = list.length > 0 ? list.length : 4; // show 4 placeholders when empty
+  for (let i = 0; i < count; i++) {
+    const src = list[i];
+    const card = document.createElement('div');
+    if (src) {
+      card.className = 'pose-card';
+      const img = document.createElement('img');
+      img.src = src;
+      img.loading = 'lazy';
+      img.alt = `${cat.ja} ${i + 1}`;
+      img.onerror = () => {
+        card.classList.add('placeholder');
+        card.innerHTML = `<div class="pose-ph"><span class="pph-num">${i + 1}</span><span>写真準備中</span></div>`;
+      };
+      const badge = document.createElement('div');
+      badge.className = 'pose-badge';
+      badge.textContent = i + 1;
+      card.appendChild(img);
+      card.appendChild(badge);
+      card.onclick = () => openPoseModal(src, `${cat.emoji} ${cat.ja} ${i + 1}`);
+    } else {
+      card.className = 'pose-card placeholder';
+      card.innerHTML = `<div class="pose-ph"><span class="pph-num">${i + 1}</span><span>写真準備中</span></div>`;
+    }
+    grid.appendChild(card);
+  }
+  phrasesEl.appendChild(grid);
+  if (list.length === 0) {
+    const note = document.createElement('div');
+    note.className = 'pose-note';
+    note.textContent = '※ ポーズ写真は準備中です。写真を追加するとここに表示されます。';
+    phrasesEl.appendChild(note);
+  }
+}
+
+function renderTranslate() {
+  if (transCat === 3) { renderWordsView(); return; }
+  phrasesEl.innerHTML = '';
+  if (transCat === 2) {
+    const hint = document.createElement('div');
+    hint.className = 'section-hint';
+    hint.innerHTML = `<span class="sh-ko">별자리를 설명할 때</span><span class="sh-ja">星空を説明するときに使えます</span>`;
+    phrasesEl.appendChild(hint);
+    CONSTELLATIONS.forEach(item => phrasesEl.appendChild(makePhraseButton(item)));
+    return;
+  }
+  PHRASES[transCat].items.forEach(item => phrasesEl.appendChild(makePhraseButton(item)));
 }
 
 function itemKey(item) {
@@ -983,7 +1286,7 @@ async function importWords(file) {
         keyRestored = true;
       }
     }
-    if (currentCategory === WORDS_TAB) renderWordsGrid();
+    if (isWordsActive()) renderWordsGrid();
     const parts = [`${newWords.length}個の単語を復元しました`];
     if (audioCount > 0) parts.push(`音声${audioCount}個`);
     if (keyRestored) parts.push('APIキーも復元');
@@ -1365,7 +1668,7 @@ addSaveBtn.onclick = async () => {
     });
     saveWordBlocks();
     closeAddModal();
-    if (currentCategory === WORDS_TAB) renderWordsGrid();
+    if (isWordsActive()) renderWordsGrid();
   } catch (e) {
     addStatus.textContent = `音声生成失敗: ${e.message || e}`;
     addStatus.className = 'status error';
@@ -1416,111 +1719,17 @@ Examples:
   return { ko: parsed.ko, kana: parsed.kana || '' };
 }
 
-function renderTranslateView() {
-  const saved = localStorage.getItem('translateInput') || '';
-  phrasesEl.innerHTML = `
-    <div class="translate-view">
-      <textarea id="translateInput" placeholder="日本語を入力してください..." spellcheck="false">${saved.replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]))}</textarea>
-      <button class="big-btn" id="shareTranslateBtn">📤 翻訳する（iOS翻訳を呼び出し）</button>
-      <button class="secondary-btn" id="copyTranslateBtn">📋 コピーのみ</button>
-      <div class="help-box">
-        <strong>使い方:</strong>
-        <span class="step">① 上の欄に日本語を入力</span>
-        <span class="step">② 「📤 翻訳する」をタップ</span>
-        <span class="step">③ 表示された共有メニューから「翻訳」をタップ</span>
-        <br>
-        <strong>📥 オフライン利用の準備（初回のみ）:</strong>
-        <span class="step">iPhone「設定」→「翻訳」→「ダウンロード済みの言語」</span>
-        <span class="step">→「韓国語」をダウンロード</span>
-        <br>
-        <strong>💡 ヒント:</strong>
-        <span class="step">テキストを長押しして直接「翻訳」を選ぶこともできます</span>
-      </div>
-    </div>
-  `;
-  const input = document.getElementById('translateInput');
-  input.oninput = () => {
-    localStorage.setItem('translateInput', input.value);
-  };
-  document.getElementById('shareTranslateBtn').onclick = async () => {
-    const text = input.value.trim();
-    if (!text) {
-      input.focus();
-      return;
-    }
-    if (navigator.share) {
-      try { await navigator.share({ text }); } catch (e) {}
-    } else {
-      try { await navigator.clipboard.writeText(text); } catch (e) {}
-      alert('共有機能が使えないためクリップボードにコピーしました。「翻訳」アプリを開いて貼り付けてください。');
-    }
-  };
-  document.getElementById('copyTranslateBtn').onclick = async () => {
-    const text = input.value.trim();
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      const btn = document.getElementById('copyTranslateBtn');
-      const orig = btn.textContent;
-      btn.textContent = '✓ コピーしました';
-      setTimeout(() => { btn.textContent = orig; }, 1200);
-    } catch (e) {}
-  };
-}
-
-function renderPhrases() {
-  if (currentCategory === TRANSLATE_TAB) {
-    renderTranslateView();
-    updateActionBar();
-    return;
-  }
-  if (currentCategory === WORDS_TAB) {
-    renderWordsView();
-    updateActionBar();
-    return;
-  }
-  phrasesEl.innerHTML = '';
-  PHRASES[currentCategory].items.forEach((item, idx) => {
-    const btn = document.createElement('button');
-    btn.className = 'phrase-btn' + (item.pose ? ' has-pose' : '') + (isSelected(item) ? ' selected' : '');
-    btn.dataset.h = item.h;
-    if (item.pose) {
-      const num = document.createElement('div');
-      num.className = 'pose-num';
-      num.textContent = item.pose;
-      btn.appendChild(num);
-    }
-    const ja = document.createElement('div');
-    ja.className = 'ja';
-    ja.textContent = item.ja;
-    btn.appendChild(ja);
-    const koRuby = document.createElement('div');
-    koRuby.className = 'ko-ruby';
-    koRuby.innerHTML = renderRuby(item.ru);
-    btn.appendChild(koRuby);
-    const marker = document.createElement('div');
-    marker.className = 'select-marker';
-    marker.textContent = '✓';
-    btn.appendChild(marker);
-    btn.onclick = () => onPhraseClick(item, btn);
-    phrasesEl.appendChild(btn);
-  });
+function renderContent() {
+  if (view === 'manual') renderManual();
+  else if (view === 'posing') renderPosing();
+  else renderTranslate();
   updateActionBar();
 }
 
 function renderAll() {
-  renderTabs();
-  renderPhrases();
+  renderNav();
+  renderContent();
   window.scrollTo(0, 0);
-}
-
-// === Click handler ===
-function onPhraseClick(item, btn) {
-  if (selectMode) {
-    toggleSelect(item, btn);
-  } else {
-    openModal(item);
-  }
 }
 
 function toggleSelect(item, btn) {
@@ -1554,33 +1763,51 @@ function updateActionBar() {
 
 // === Modal ===
 function openModal(item) {
+  modalImg.style.display = 'none';
+  modalImg.src = '';
+  modalPoseNum.style.display = 'none';
+  modalKo.style.display = '';
+  modalSpeak.style.display = '';
   modalJa.textContent = item.ja;
   modalKo.innerHTML = renderRuby(item.ru);
-  if (item.pose) {
-    modalPoseNum.textContent = item.pose;
-    modalPoseNum.style.display = 'block';
-  } else {
-    modalPoseNum.style.display = 'none';
-  }
   modal.classList.add('active');
-  modal.dataset.currentH = item.h;
+  modal.dataset.currentH = item.h || '';
   setTimeout(() => playItem(item), 100);
+}
+
+function openPoseModal(src, label) {
+  modalPoseNum.style.display = 'none';
+  modalKo.style.display = 'none';
+  modalSpeak.style.display = 'none';
+  modalJa.textContent = label;
+  modalImg.src = src;
+  modalImg.style.display = 'block';
+  modal.classList.add('active');
+  modal.dataset.currentH = '';
 }
 
 function closeModal() {
   modal.classList.remove('active');
+  modalImg.src = '';
   stopAllAudio();
+}
+
+function findItemByHash(h) {
+  if (!h) return null;
+  const pools = [CONSTELLATIONS, ...MANUAL.map(s => s.items), ...PHRASES.map(c => c.items)];
+  for (const pool of pools) {
+    const item = pool.find(i => i.h === h);
+    if (item) return item;
+  }
+  return null;
 }
 
 modalClose.onclick = (e) => { e.stopPropagation(); closeModal(); };
 modalBody.onclick = closeModal;
 modalSpeak.onclick = (e) => {
   e.stopPropagation();
-  const h = modal.dataset.currentH;
-  for (const cat of PHRASES) {
-    const item = cat.items.find(i => i.h === h);
-    if (item) { playItem(item); return; }
-  }
+  const item = findItemByHash(modal.dataset.currentH);
+  if (item) playItem(item);
 };
 
 // === Theme ===
@@ -1609,8 +1836,8 @@ speedBtns.forEach(b => {
 applySpeed(currentSpeed);
 
 // === Select mode ===
-selectToggle.onclick = () => {
-  selectMode = !selectMode;
+function setSelectMode(on) {
+  selectMode = on;
   document.body.classList.toggle('select-mode', selectMode);
   selectToggle.classList.toggle('active', selectMode);
   selectToggle.textContent = selectMode ? '✓ 選択中' : '☑ 選択';
@@ -1619,7 +1846,8 @@ selectToggle.onclick = () => {
     document.querySelectorAll('.phrase-btn.selected, .word-card.selected').forEach(b => b.classList.remove('selected'));
   }
   updateActionBar();
-};
+}
+selectToggle.onclick = () => setSelectMode(!selectMode);
 
 clearSelectedBtn.onclick = () => {
   selected.length = 0;
@@ -1696,13 +1924,12 @@ function clearScheduled() {
   highlightTimers = [];
 }
 
-async function playSelectedSmooth() {
-  if (selected.length === 0) return;
+async function scheduleAndPlay(itemList) {
   const ctx = getAudioCtx();
   if (ctx.state === 'suspended') {
     try { await ctx.resume(); } catch {}
   }
-  const items = [...selected];
+  const items = [...itemList];
   // Pre-load + trim all buffers in parallel
   const loaded = await Promise.all(items.map(async item => ({
     item,
@@ -1745,6 +1972,35 @@ async function playSelectedSmooth() {
   const totalMs = Math.max(0, (cursor - ctx.currentTime) * 1000) + 100;
   await new Promise(r => setTimeout(r, totalMs));
   document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
+}
+
+async function playSelectedSmooth() {
+  if (selected.length === 0) return;
+  return scheduleAndPlay(selected);
+}
+
+// Manual section "通し" playback (own start/stop toggle)
+async function playSection(items, btn) {
+  if (isPlayingBatch) {
+    stopBatchRequested = true;
+    clearScheduled();
+    stopAllAudio();
+    return;
+  }
+  if (!items || !items.length) return;
+  isPlayingBatch = true;
+  stopBatchRequested = false;
+  const orig = btn.textContent;
+  btn.textContent = '⏸ 停止';
+  try {
+    await scheduleAndPlay(items);
+  } finally {
+    isPlayingBatch = false;
+    stopBatchRequested = false;
+    clearScheduled();
+    document.querySelectorAll('.phrase-btn.playing, .word-card.playing').forEach(b => b.classList.remove('playing'));
+    btn.textContent = orig;
+  }
 }
 
 function bindPlaySelected() {

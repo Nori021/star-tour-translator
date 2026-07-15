@@ -1,7 +1,7 @@
 {
-  "name": "星空ツアー翻訳",
-  "short_name": "星空翻訳",
-  "description": "星空撮影ツアー用の日本語→韓国語ボタン翻訳",
+  "name": "星空フォト ガイド",
+  "short_name": "星空ガイド",
+  "description": "星空フォトツアーのマニュアル・ポージング・韓国語ガイド",
   "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",

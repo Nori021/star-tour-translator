@@ -1,4 +1,4 @@
-const CACHE = 'star-tour-translator-v4';
+const CACHE = 'star-tour-translator-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -27,8 +27,8 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   const url = new URL(e.request.url);
-  // For audio files: cache aggressively (immutable hash-named files)
-  if (url.pathname.includes('/audio/')) {
+  // For audio & pose images: cache aggressively (immutable files)
+  if (url.pathname.includes('/audio/') || url.pathname.includes('/poses/')) {
     e.respondWith(
       caches.match(e.request).then(cached =>
         cached || fetch(e.request).then(res => {
