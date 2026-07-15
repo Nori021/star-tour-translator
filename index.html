@@ -935,7 +935,7 @@ async function playItem(item, opts = {}) {
   let audioUrl = null;
   let revokeUrl = null;
   if (item.h) {
-    audioUrl = `audio/${item.h}.mp3`;
+    audioUrl = `audio/${item.h}.m4a`;
   } else if (item.id) {
     const blob = await loadAudio(item.id);
     if (blob) {
@@ -1893,7 +1893,7 @@ async function loadAudioBuffer(item, ctx) {
   let arrayBuffer = null;
   if (item.h) {
     try {
-      const res = await fetch(`audio/${item.h}.mp3`);
+      const res = await fetch(`audio/${item.h}.m4a`);
       if (!res.ok) return null;
       arrayBuffer = await res.arrayBuffer();
     } catch { return null; }
