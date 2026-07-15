@@ -1208,11 +1208,7 @@ function renderManual() {
   phrasesEl.appendChild(sheet);
 }
 
-function renderPosing() {
-  phrasesEl.innerHTML = '';
-  if (poseConfirm) { renderPoseConfirm(); return; }
-
-  // --- control bar: target count + status + actions ---
+function buildPoseControl() {
   const bar = document.createElement('div');
   bar.className = 'pose-control';
   bar.innerHTML =
@@ -1229,13 +1225,37 @@ function renderPosing() {
           `<button class="pc-confirm${poseBasket.length >= poseTarget ? ' ready' : ''}" data-act="confirm">✓ 確認する (${poseBasket.length})</button>` +
         `</div>`
       : '');
-  bar.querySelector('[data-act="minus"]').onclick = () => { if (poseTarget > 1) { poseTarget--; savePoseState(); renderPosing(); } };
-  bar.querySelector('[data-act="plus"]').onclick = () => { if (poseTarget < 20) { poseTarget++; savePoseState(); renderPosing(); } };
+  bar.querySelector('[data-act="minus"]').onclick = () => { if (poseTarget > 1) { poseTarget--; savePoseState(); updatePoseUI(); } };
+  bar.querySelector('[data-act="plus"]').onclick = () => { if (poseTarget < 20) { poseTarget++; savePoseState(); updatePoseUI(); } };
   const clr = bar.querySelector('[data-act="clear"]');
   if (clr) clr.onclick = clearBasket;
   const cnf = bar.querySelector('[data-act="confirm"]');
   if (cnf) cnf.onclick = () => { poseConfirm = true; renderAll(); };
-  phrasesEl.appendChild(bar);
+  return bar;
+}
+
+// In-place refresh (no full re-render, no scroll-to-top)
+function updatePoseUI() {
+  const oldBar = phrasesEl.querySelector('.pose-control');
+  if (oldBar) oldBar.replaceWith(buildPoseControl());
+  phrasesEl.querySelectorAll('.pose-grid .pose-card').forEach(card => {
+    const src = card.dataset.src;
+    if (!src) return;
+    const pickIdx = poseBasket.findIndex(b => b.key === src);
+    card.classList.toggle('picked', pickIdx >= 0);
+    const badge = card.querySelector('.pick-badge');
+    if (badge) {
+      badge.classList.toggle('unpicked', pickIdx < 0);
+      badge.textContent = pickIdx >= 0 ? String(pickIdx + 1) : (card.dataset.num || '');
+    }
+  });
+}
+
+function renderPosing() {
+  phrasesEl.innerHTML = '';
+  if (poseConfirm) { renderPoseConfirm(); return; }
+
+  phrasesEl.appendChild(buildPoseControl());
 
   // hint
   const hint = document.createElement('div');
@@ -1260,6 +1280,8 @@ function renderPosing() {
       const pickIdx = poseBasket.findIndex(b => b.key === src);
       const card = document.createElement('div');
       card.className = 'pose-card' + (pickIdx >= 0 ? ' picked' : '');
+      card.dataset.src = src;
+      card.dataset.num = String(i + 1);
       const img = document.createElement('img');
       img.src = src; img.loading = 'lazy'; img.alt = label;
       card.appendChild(img);
@@ -1283,16 +1305,18 @@ function togglePoseSelect(src, label) {
   if (idx >= 0) {
     poseBasket.splice(idx, 1);
     savePoseState();
-    renderAll();
+    updatePoseUI();          // keep scroll position
     return;
   }
   if (poseBasket.length >= poseTarget) return; // at capacity: deselect one to change
   poseBasket.push({ key: src, label });
   savePoseState();
   if (poseBasket.length >= poseTarget) {
-    poseConfirm = true; // reached target → show confirmation automatically
+    poseConfirm = true;      // reached target → show confirmation (jump to top is intended)
+    renderAll();
+    return;
   }
-  renderAll();
+  updatePoseUI();            // keep scroll position
 }
 
 function clearBasket() {
