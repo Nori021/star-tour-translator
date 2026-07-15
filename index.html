@@ -660,10 +660,15 @@ body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity
 .phrase-btn.flat {
   border: none; background: transparent;
   border-radius: 10px;
-  padding: 8px 6px; gap: 6px;
+  padding: 10px 6px; gap: 6px;
 }
 .phrase-btn.flat:active { background: var(--selected-bg); }
 .phrase-btn.flat .ja { font-size: 15px; }
+/* Japanese-only guide: clean, larger reading text */
+.phrase-btn.flat.only-ja .ja { font-size: 17px; line-height: 1.75; color: var(--text); }
+/* Korean-only guide: Korean + furigana is the sole content, a touch larger */
+.phrase-btn.flat.only-ko .ko-ruby { font-size: 19px; line-height: 2.5; }
+.phrase-btn.flat.only-ko { padding-top: 6px; padding-bottom: 12px; }
 
 /* === Pose view === */
 .pose-grid {
@@ -890,6 +895,10 @@ const STORAGE_SPEED = 'speed';
 let view = localStorage.getItem('view') || 'manual';
 if (!['manual', 'posing', 'translate'].includes(view)) view = 'manual';
 let posingCat = 0;
+// guideLang: 'ja' = 日本語版, 'ko' = 한국어版 (ご案内の表示言語)
+let guideLang = localStorage.getItem('guideLang') || 'ja';
+if (guideLang !== 'ja' && guideLang !== 'ko') guideLang = 'ja';
+function saveGuideLang() { localStorage.setItem('guideLang', guideLang); }
 // transCat: 0,1 = PHRASES categories, 2 = 星座, 3 = 単語ブロック
 let transCat = parseInt(localStorage.getItem('transCat') || '0', 10);
 if (transCat < 0 || transCat > 3) transCat = 0;
@@ -1025,7 +1034,12 @@ function renderNav() {
   // --- sub tabs ---
   subTabsEl.innerHTML = '';
   let subs = [];
-  if (view === 'posing') {
+  if (view === 'manual') {
+    subs = [
+      { label: '🇯🇵 日本語', active: guideLang === 'ja', on: () => { guideLang = 'ja'; saveGuideLang(); renderAll(); } },
+      { label: '🇰🇷 한국어', active: guideLang === 'ko', on: () => { guideLang = 'ko'; saveGuideLang(); renderAll(); } },
+    ];
+  } else if (view === 'posing') {
     subs = POSES.map((p, i) => ({
       label: `${p.emoji} ${p.ja}`, active: posingCat === i,
       on: () => { posingCat = i; renderAll(); },
@@ -1056,16 +1070,21 @@ function renderNav() {
 // Build a phrase button (used by manual / phrases / constellations)
 function makePhraseButton(item, opts = {}) {
   const btn = document.createElement('button');
-  btn.className = 'phrase-btn' + (opts.flat ? ' flat' : '') + (isSelected(item) ? ' selected' : '');
+  const langClass = opts.only ? ' only-' + opts.only : '';
+  btn.className = 'phrase-btn' + (opts.flat ? ' flat' : '') + langClass + (isSelected(item) ? ' selected' : '');
   btn.dataset.h = item.h || '';
-  const ja = document.createElement('div');
-  ja.className = 'ja';
-  ja.textContent = item.ja;
-  btn.appendChild(ja);
-  const koRuby = document.createElement('div');
-  koRuby.className = 'ko-ruby';
-  koRuby.innerHTML = renderRuby(item.ru);
-  btn.appendChild(koRuby);
+  if (opts.only !== 'ko') {
+    const ja = document.createElement('div');
+    ja.className = 'ja';
+    ja.textContent = item.ja;
+    btn.appendChild(ja);
+  }
+  if (opts.only !== 'ja') {
+    const koRuby = document.createElement('div');
+    koRuby.className = 'ko-ruby';
+    koRuby.innerHTML = renderRuby(item.ru);
+    btn.appendChild(koRuby);
+  }
   const marker = document.createElement('div');
   marker.className = 'select-marker';
   marker.textContent = '✓';
@@ -1087,15 +1106,16 @@ async function playInline(item, btn) {
 
 function renderManual() {
   phrasesEl.innerHTML = '';
+  const ko = guideLang === 'ko';
   const sheet = document.createElement('div');
-  sheet.className = 'guide-sheet';
+  sheet.className = 'guide-sheet' + (ko ? ' ko-guide' : '');
 
   // Title + play-all (whole guide)
   const titleRow = document.createElement('div');
   titleRow.className = 'guide-title-row';
-  titleRow.innerHTML =
-    `<div class="guide-title"><span class="gt-ja">🌟 星空撮影のご案内</span>` +
-    `<span class="gt-ko">별 사진 촬영 안내</span></div>`;
+  titleRow.innerHTML = ko
+    ? `<div class="guide-title"><span class="gt-ja">🌟 별 사진 촬영 안내</span></div>`
+    : `<div class="guide-title"><span class="gt-ja">🌟 星空撮影のご案内</span></div>`;
   const playAll = document.createElement('button');
   playAll.className = 'ms-playall';
   playAll.textContent = '▶ 通し';
@@ -1104,16 +1124,17 @@ function renderManual() {
   titleRow.appendChild(playAll);
   sheet.appendChild(titleRow);
 
-  // Sections flow within one sheet (headings + tappable sentences)
+  // Sections flow within one sheet (single language, tappable to hear Korean audio)
   MANUAL.forEach(sec => {
     const head = document.createElement('div');
     head.className = 'guide-section-head';
     head.innerHTML =
       `<span class="gs-icon">${sec.icon}</span>` +
-      `<span class="gs-ko">${escapeHtml(sec.ko)}</span>` +
-      `<span class="gs-ja">${escapeHtml(sec.ja)}</span>`;
+      `<span class="gs-ko">${escapeHtml(ko ? sec.ko : sec.ja)}</span>`;
     sheet.appendChild(head);
-    sec.items.forEach(item => sheet.appendChild(makePhraseButton(item, { inline: true, flat: true })));
+    sec.items.forEach(item => sheet.appendChild(
+      makePhraseButton(item, { inline: true, flat: true, only: ko ? 'ko' : 'ja' })
+    ));
   });
 
   phrasesEl.appendChild(sheet);
