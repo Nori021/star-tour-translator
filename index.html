@@ -704,6 +704,64 @@ body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity
   border-radius: 12px; color: var(--text-dim); font-size: 12px; line-height: 1.6;
 }
 
+/* Pose selection workflow */
+.pose-control {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 10px 12px; margin-bottom: 6px;
+}
+.pc-target { display: flex; align-items: center; gap: 8px; }
+.pc-label { font-size: 13px; color: var(--text-dim); }
+.pc-step {
+  width: 34px; height: 34px; border-radius: 9px;
+  background: var(--button-bg); color: var(--text);
+  border: 1px solid var(--border); font-size: 19px; font-weight: 700;
+  cursor: pointer; font-family: inherit; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+}
+.pc-count { font-size: 19px; font-weight: 700; color: var(--text); min-width: 24px; text-align: center; }
+.pc-status { font-size: 14px; color: var(--text-dim); margin-left: auto; }
+.pc-status b { color: var(--accent); font-size: 18px; }
+.pc-actions { display: flex; gap: 8px; width: 100%; }
+.pc-clear, .pc-confirm {
+  flex: 1; padding: 12px; border-radius: 11px; font-size: 14px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.pc-clear { flex: 0 0 auto; background: var(--button-bg); color: var(--text); border: 1px solid var(--border); }
+.pc-confirm { background: var(--accent-bg); color: #fff; border: 1px solid var(--accent); }
+.pc-confirm.ready { animation: pc-pulse 1.2s ease-in-out infinite; }
+@keyframes pc-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.68; } }
+
+.pose-card.picked { border: 3px solid var(--accent); }
+.pose-card .pick-badge {
+  position: absolute; top: 8px; left: 8px;
+  min-width: 28px; height: 28px; border-radius: 14px; padding: 0 7px;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; line-height: 1;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.pose-card .pick-badge.unpicked { background: rgba(0,0,0,0.5); font-weight: 600; }
+.pose-zoom {
+  position: absolute; top: 6px; right: 6px;
+  width: 32px; height: 32px; border-radius: 16px;
+  background: rgba(0,0,0,0.5); color: #fff; border: none;
+  font-size: 15px; cursor: pointer; z-index: 2; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.pose-confirm-head { text-align: center; padding: 6px 12px 14px; }
+.pcf-q { font-size: 21px; font-weight: 700; color: var(--text); line-height: 1.4; }
+.pcf-ko { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+.pcf-count { font-size: 13px; color: var(--accent); margin-top: 8px; font-weight: 600; }
+.pose-confirm-actions { display: flex; gap: 8px; margin-top: 16px; }
+.pose-confirm-actions button {
+  flex: 1; padding: 15px; border-radius: 12px; font-size: 15px; font-weight: 600;
+  font-family: inherit; cursor: pointer;
+}
+.btn-back { background: var(--button-bg); color: var(--text); border: 1px solid var(--border); }
+.btn-clear { background: #c0392b; color: #fff; border: 1px solid #c0392b; }
+
 /* Modal image (pose fullscreen) */
 #modalImg {
   max-width: 100%; max-height: 72vh;
@@ -895,6 +953,16 @@ const STORAGE_SPEED = 'speed';
 let view = localStorage.getItem('view') || 'manual';
 if (!['manual', 'posing', 'translate'].includes(view)) view = 'manual';
 let posingCat = 0;
+// --- pose selection workflow ---
+let poseTarget = parseInt(localStorage.getItem('poseTarget') || '5', 10);
+if (!(poseTarget >= 1 && poseTarget <= 20)) poseTarget = 5;
+let poseBasket = [];
+try { const pb = JSON.parse(localStorage.getItem('poseBasket') || '[]'); if (Array.isArray(pb)) poseBasket = pb; } catch {}
+let poseConfirm = false;
+function savePoseState() {
+  localStorage.setItem('poseTarget', String(poseTarget));
+  localStorage.setItem('poseBasket', JSON.stringify(poseBasket));
+}
 // guideLang: 'ja' = 日本語版, 'ko' = 한국어版 (ご案内の表示言語)
 let guideLang = localStorage.getItem('guideLang') || 'ja';
 if (guideLang !== 'ja' && guideLang !== 'ko') guideLang = 'ja';
@@ -1039,7 +1107,7 @@ function renderNav() {
       { label: '🇯🇵 日本語', active: guideLang === 'ja', on: () => { guideLang = 'ja'; saveGuideLang(); renderAll(); } },
       { label: '🇰🇷 한국어', active: guideLang === 'ko', on: () => { guideLang = 'ko'; saveGuideLang(); renderAll(); } },
     ];
-  } else if (view === 'posing') {
+  } else if (view === 'posing' && !poseConfirm) {
     subs = POSES.map((p, i) => ({
       label: `${p.emoji} ${p.ja}`, active: posingCat === i,
       on: () => { posingCat = i; renderAll(); },
@@ -1142,47 +1210,132 @@ function renderManual() {
 
 function renderPosing() {
   phrasesEl.innerHTML = '';
-  const cat = POSES[posingCat];
+  if (poseConfirm) { renderPoseConfirm(); return; }
+
+  // --- control bar: target count + status + actions ---
+  const bar = document.createElement('div');
+  bar.className = 'pose-control';
+  bar.innerHTML =
+    `<div class="pc-target">` +
+      `<span class="pc-label">撮影枚数</span>` +
+      `<button class="pc-step" data-act="minus">−</button>` +
+      `<span class="pc-count">${poseTarget}</span>` +
+      `<button class="pc-step" data-act="plus">＋</button>` +
+    `</div>` +
+    `<div class="pc-status">選択 <b>${poseBasket.length}</b> / ${poseTarget}</div>` +
+    (poseBasket.length > 0
+      ? `<div class="pc-actions">` +
+          `<button class="pc-clear" data-act="clear">🗑 クリア</button>` +
+          `<button class="pc-confirm${poseBasket.length >= poseTarget ? ' ready' : ''}" data-act="confirm">✓ 確認する (${poseBasket.length})</button>` +
+        `</div>`
+      : '');
+  bar.querySelector('[data-act="minus"]').onclick = () => { if (poseTarget > 1) { poseTarget--; savePoseState(); renderPosing(); } };
+  bar.querySelector('[data-act="plus"]').onclick = () => { if (poseTarget < 20) { poseTarget++; savePoseState(); renderPosing(); } };
+  const clr = bar.querySelector('[data-act="clear"]');
+  if (clr) clr.onclick = clearBasket;
+  const cnf = bar.querySelector('[data-act="confirm"]');
+  if (cnf) cnf.onclick = () => { poseConfirm = true; renderAll(); };
+  phrasesEl.appendChild(bar);
+
+  // hint
   const hint = document.createElement('div');
   hint.className = 'section-hint';
-  hint.innerHTML = `<span class="sh-ko">마음에 드는 포즈를 골라 주세요</span><span class="sh-ja">好きなポーズをお選びください</span>`;
+  hint.innerHTML = `<span class="sh-ko">마음에 드는 포즈를 골라 주세요</span><span class="sh-ja">好きなポーズをタップして選んでください</span>`;
   phrasesEl.appendChild(hint);
+
+  // grid
+  const cat = POSES[posingCat];
   const grid = document.createElement('div');
   grid.className = 'pose-grid';
   const list = cat.poses || [];
-  const count = list.length > 0 ? list.length : 4; // show 4 placeholders when empty
-  for (let i = 0; i < count; i++) {
-    const src = list[i];
-    const card = document.createElement('div');
-    if (src) {
-      card.className = 'pose-card';
-      const img = document.createElement('img');
-      img.src = src;
-      img.loading = 'lazy';
-      img.alt = `${cat.ja} ${i + 1}`;
-      img.onerror = () => {
-        card.classList.add('placeholder');
-        card.innerHTML = `<div class="pose-ph"><span class="pph-num">${i + 1}</span><span>写真準備中</span></div>`;
-      };
-      const badge = document.createElement('div');
-      badge.className = 'pose-badge';
-      badge.textContent = i + 1;
-      card.appendChild(img);
-      card.appendChild(badge);
-      card.onclick = () => openPoseModal(src, `${cat.emoji} ${cat.ja} ${i + 1}`);
-    } else {
-      card.className = 'pose-card placeholder';
-      card.innerHTML = `<div class="pose-ph"><span class="pph-num">${i + 1}</span><span>写真準備中</span></div>`;
-    }
-    grid.appendChild(card);
-  }
-  phrasesEl.appendChild(grid);
   if (list.length === 0) {
     const note = document.createElement('div');
     note.className = 'pose-note';
-    note.textContent = '※ ポーズ写真は準備中です。写真を追加するとここに表示されます。';
-    phrasesEl.appendChild(note);
+    note.style.gridColumn = '1 / -1';
+    note.textContent = '※ この分類の写真は準備中です。';
+    grid.appendChild(note);
+  } else {
+    list.forEach((src, i) => {
+      const label = `${cat.emoji} ${cat.ja} ${i + 1}`;
+      const pickIdx = poseBasket.findIndex(b => b.key === src);
+      const card = document.createElement('div');
+      card.className = 'pose-card' + (pickIdx >= 0 ? ' picked' : '');
+      const img = document.createElement('img');
+      img.src = src; img.loading = 'lazy'; img.alt = label;
+      card.appendChild(img);
+      const badge = document.createElement('div');
+      badge.className = 'pick-badge' + (pickIdx >= 0 ? '' : ' unpicked');
+      badge.textContent = pickIdx >= 0 ? String(pickIdx + 1) : String(i + 1);
+      card.appendChild(badge);
+      const zoom = document.createElement('button');
+      zoom.className = 'pose-zoom'; zoom.textContent = '🔍';
+      zoom.onclick = (e) => { e.stopPropagation(); openPoseModal(src, label); };
+      card.appendChild(zoom);
+      card.onclick = () => togglePoseSelect(src, label);
+      grid.appendChild(card);
+    });
   }
+  phrasesEl.appendChild(grid);
+}
+
+function togglePoseSelect(src, label) {
+  const idx = poseBasket.findIndex(b => b.key === src);
+  if (idx >= 0) {
+    poseBasket.splice(idx, 1);
+    savePoseState();
+    renderAll();
+    return;
+  }
+  if (poseBasket.length >= poseTarget) return; // at capacity: deselect one to change
+  poseBasket.push({ key: src, label });
+  savePoseState();
+  if (poseBasket.length >= poseTarget) {
+    poseConfirm = true; // reached target → show confirmation automatically
+  }
+  renderAll();
+}
+
+function clearBasket() {
+  poseBasket = [];
+  poseConfirm = false;
+  savePoseState();
+  renderAll();
+}
+
+function renderPoseConfirm() {
+  const head = document.createElement('div');
+  head.className = 'pose-confirm-head';
+  head.innerHTML =
+    `<div class="pcf-q">この${poseBasket.length}枚でよろしいですか？</div>` +
+    `<div class="pcf-ko">이 사진들로 촬영할까요?</div>` +
+    `<div class="pcf-count">撮影 ${poseBasket.length} / ${poseTarget} 枚</div>`;
+  phrasesEl.appendChild(head);
+
+  const grid = document.createElement('div');
+  grid.className = 'pose-grid';
+  poseBasket.forEach((b, i) => {
+    const card = document.createElement('div');
+    card.className = 'pose-card';
+    const img = document.createElement('img');
+    img.src = b.key; img.loading = 'lazy'; img.alt = b.label;
+    card.appendChild(img);
+    const badge = document.createElement('div');
+    badge.className = 'pick-badge';
+    badge.textContent = String(i + 1);
+    card.appendChild(badge);
+    card.onclick = () => openPoseModal(b.key, `${i + 1}. ${b.label}`);
+    grid.appendChild(card);
+  });
+  phrasesEl.appendChild(grid);
+
+  const actions = document.createElement('div');
+  actions.className = 'pose-confirm-actions';
+  actions.innerHTML =
+    `<button class="btn-back" data-act="back">← 選び直す</button>` +
+    `<button class="btn-clear" data-act="clear">🗑 クリア（最初から）</button>`;
+  actions.querySelector('[data-act="back"]').onclick = () => { poseConfirm = false; renderAll(); };
+  actions.querySelector('[data-act="clear"]').onclick = clearBasket;
+  phrasesEl.appendChild(actions);
 }
 
 function renderTranslate() {
