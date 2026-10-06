@@ -775,6 +775,7 @@ body.normal-theme .word-card.selected .word-ko ruby rt { color: #475569; opacity
   <div class="row1">
     <h1>★ 星空フォト ガイド</h1>
     <button class="icon-btn" id="selectToggle" aria-label="選択モード">☑ 選択</button>
+    <button class="icon-btn" id="langToggle" aria-label="言語切り替え" style="display:none">🇰🇷 韓国語</button>
     <button class="icon-btn" id="themeToggle" aria-label="テーマ">☀</button>
   </div>
   <nav id="mainTabs" class="main-tabs"></nav>
@@ -995,6 +996,8 @@ const modalClose = document.getElementById('modalClose');
 const modalSpeak = document.getElementById('modalSpeak');
 const themeToggle = document.getElementById('themeToggle');
 const selectToggle = document.getElementById('selectToggle');
+const langToggle = document.getElementById('langToggle');
+langToggle.onclick = () => { guideLang = guideLang === 'ja' ? 'ko' : 'ja'; saveGuideLang(); renderAll(); };
 const actionBar = document.getElementById('action-bar');
 const actionCount = document.getElementById('actionCount');
 const playSelectedBtn = document.getElementById('playSelected');
@@ -1102,12 +1105,7 @@ function renderNav() {
   // --- sub tabs ---
   subTabsEl.innerHTML = '';
   let subs = [];
-  if (view === 'manual') {
-    subs = [
-      { label: '🇯🇵 日本語', active: guideLang === 'ja', on: () => { guideLang = 'ja'; saveGuideLang(); renderAll(); } },
-      { label: '🇰🇷 한국어', active: guideLang === 'ko', on: () => { guideLang = 'ko'; saveGuideLang(); renderAll(); } },
-    ];
-  } else if (view === 'posing' && !poseConfirm) {
+  if (view === 'posing' && !poseConfirm) {
     subs = POSES.map((p, i) => ({
       label: `${p.emoji} ${p.ja}`, active: posingCat === i,
       on: () => { posingCat = i; renderAll(); },
@@ -1133,6 +1131,10 @@ function renderNav() {
   // --- contextual controls ---
   selectToggle.style.display = view === 'translate' ? '' : 'none';
   speedRow.style.display = view === 'posing' ? 'none' : 'flex';
+  // Language toggle lives top-right, shown on the guide (ご案内)
+  langToggle.style.display = view === 'manual' ? '' : 'none';
+  langToggle.textContent = guideLang === 'ja' ? '🇰🇷 韓国語' : '🇯🇵 日本語';
+  langToggle.classList.toggle('active', guideLang === 'ko');
 }
 
 // Build a phrase button (used by manual / phrases / constellations)
